@@ -149,6 +149,7 @@
     function renderAgentList() {
         const aList = document.querySelector('#agents ol');
         aList.innerHTML = '';
+        highlightAgents = [];
         for (let i = 0; i < data.epoch[0].state.length; i++) {
             const li = document.createElement('li');
             li.setAttribute('data-id', data.epoch[0].state[i].ID);
@@ -186,7 +187,7 @@
         if (highlightAgents.length < 1) {
             svg.querySelectorAll('rect[data-id]').forEach(r => r.removeAttribute('fill-opacity'));
         } else {
-            svg.querySelectorAll('rect[data-id]').forEach(r => r.setAttribute('fill-opacity', '.2'));
+            svg.querySelectorAll('rect[data-id]').forEach(r => r.setAttribute('fill-opacity', '.1'));
             highlightAgents.forEach(id => svg.querySelector(`rect[data-id="${id}"]`).removeAttribute('fill-opacity'));
         }
     }
