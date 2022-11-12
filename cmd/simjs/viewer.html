@@ -229,6 +229,14 @@
         renderHighlightedAgents();
     });
 
+    document.getElementById('container').addEventListener('click', (evt) => {
+        if (evt.target.tagName !== 'rect') return;
+        const id = evt.target.getAttribute('data-id');
+        document.querySelector(`#agents li[data-id="${id}"]`).classList.toggle('selected');
+        highlightAgents = [].map.call(document.querySelectorAll('#agents .selected'), el => el.getAttribute('data-id'));
+        renderHighlightedAgents();
+    });
+
   </script>
 </body>
 </html>
