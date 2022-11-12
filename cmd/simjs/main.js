@@ -154,6 +154,7 @@ let sim_log = {
 
 for (let e = 1; e <= SimEpochs; e++) {
     const _start = Date.now();
+    console.log(`Epoch #${e} started at ${_start}`);
 
     for (let i = 0; i < population.length; i++) {
         let agent = population[i];
