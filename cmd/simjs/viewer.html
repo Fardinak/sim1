@@ -191,7 +191,13 @@
         }
     }
 
-    document.getElementById('next').addEventListener('click', nextEpoch);
+    document.getElementById('next').addEventListener('click', () => {
+        if (currentEpoch < data.totalEpochs) {
+            nextEpoch();
+        } else if (confirm("Last epoch. Restart playback?")) {
+            renderEpoch(0);
+        }
+    });
     document.getElementById('prev').addEventListener('click', previousEpoch);
     document.getElementById('play').addEventListener('click', function() {
         playing = !playing;
