@@ -64,6 +64,8 @@ function agentAction(a, o) {
 
 function observe(a) {
     let depth = (a.DNA1&GeneMaskSight) >> 12;
+    if (depth < 1) return [];
+
     let o = [];
     const obs = (dir, dis, x) => x != null ? o.push({
         direction: dir,
@@ -72,9 +74,9 @@ function observe(a) {
     }) : undefined;
 
     if (a.X+1 < SimSize) for (let i = a.X+1; i <= Math.min(a.X+depth, SimSize-1); i++) obs('right', i, grid[i][a.Y]);
-    if (a.X-1 >= 0)      for (let i = a.X-1; i <= Math.max(a.X-depth, 0);         i--) obs('left',  i, grid[i][a.Y]);
+    if (a.X-1 >= 0)      for (let i = a.X-1; i >= Math.max(a.X-depth, 0);         i--) obs('left',  i, grid[i][a.Y]);
     if (a.Y+1 < SimSize) for (let i = a.Y+1; i <= Math.min(a.Y+depth, SimSize-1); i++) obs('down',  i, grid[a.X][i]);
-    if (a.Y-1 >= 0)      for (let i = a.Y-1; i <= Math.max(a.Y-depth, 0);         i--) obs('up',    i, grid[a.X][i]);
+    if (a.Y-1 >= 0)      for (let i = a.Y-1; i >= Math.max(a.Y-depth, 0);         i--) obs('up',    i, grid[a.X][i]);
 
     return o;
 }
@@ -82,7 +84,7 @@ function observe(a) {
 function agentMove(a, dir) {
     let length = (a.DNA1&GeneMaskSpeed) >> 16;
 
-    grid[a.X][a.Y] = null;
+    grid[a.X][a.Y] = undefined;
     switch (dir) {
         case 'left':
             a.X = Math.max(a.X - length, 0);
@@ -153,12 +155,7 @@ for (let e = 1; e <= SimEpochs; e++) {
 
     for (let i = 0; i < population.length; i++) {
         let agent = population[i];
-        let observation;
-        // try {
-        //     observation = observe(agent);
-        // } catch (err) {
-        //     console.error(err, agent, grid[agent.X]);
-        // }
+        let observation = observe(agent);
         let action = agentAction(agent, observation);
 
         performAction(agent, action);
