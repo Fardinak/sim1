@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const SimSize = 256;
 const SimPopulation = 128;
 const SimEpochs = 20;
@@ -167,4 +169,4 @@ for (let e = 1; e <= SimEpochs; e++) {
     });
 }
 
-console.log(JSON.stringify(sim_log));
+fs.writeFileSync(`${sim_log.startedAt}.json`, JSON.stringify(sim_log));
