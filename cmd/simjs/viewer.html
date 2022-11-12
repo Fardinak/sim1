@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SIM1.1 VIEWER</title>
+
+    <style>
+      html, body { height: 100%; }
+      h1, h2, h3, h4, h5, h6 { margin:0; }
+      body {
+          font-family: monospace;
+      }
+      .dragging {
+        background: cadetblue;
+      }
+      #controls {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          width: 120px;
+          padding: 5px;
+          border-radius: 10px;
+          border: 1px solid #d8d8d8;
+          box-shadow: 0 0 10px rgba(0, 0, 0, .1);
+      }
+      #agents {
+          position: absolute;
+          top: 120px;
+          right: 20px;
+          width: 130px;
+          padding: 5px;
+          border-radius: 2px;
+          border: 1px solid #d8d8d8;
+      }
+      #agents li:hover {
+          background: rgba(0, 0, 0, .1);
+          cursor: pointer;
+      }
+      #agents li.selected {
+          background: rgba(0, 0, 0, .2);
+      }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <button id="prev">< Prev</button>
+        <button id="next">Next ></button>
+        <br>
+        <button id="play">Play</button>
+        <select id="speed">
+            <option value="1">x1</option>
+            <option value="2">x2</option>
+            <option value="4">x4</option>
+            <option value="8">x8</option>
+            <option value="10">x10</option>
+            <option value="30">x30</option>
+            <option value="60">x60</option>
+            <option value="100">x100</option>
+        </select>
+        <br>
+        <label><input type="checkbox" id="loop" /> Loop</label>
+    </div>
+
+    <div id="agents">
+        <h4>Agents:</h4>
+        <ol></ol>
+    </div>
+
+    <div id="container"></div>
+
+  <script>
+    document.querySelector('body').addEventListener('dragenter', () => {
+      document.body.classList.add('dragging');
+    });
+    document.querySelector('body').addEventListener('dragleave', () => {
+      document.body.classList.remove('dragging');
+    });
+    document.querySelector('body').addEventListener('dragover', (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+    });
+    document.querySelector('body').addEventListener('drop', (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      document.body.classList.remove('dragging');
+
+      if (evt.dataTransfer.files.length < 1 || evt.dataTransfer.files[0].type !== 'application/json') {
+        return alert('unsupported file');
+      }
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        loadJSON(JSON.parse(reader.result));
+      });
+      reader.readAsText(evt.dataTransfer.files[0]);
+    });
+
+    const SvgRectSize = 3;
+    const GeneMaskColor = 0x0000000000000FFF;
+
+    function getAgentColor(a) {
+        let r = ((a.DNA1&GeneMaskColor&0xF00) >> 8) * 16;
+        let g = ((a.DNA1&GeneMaskColor&0x0F0) >> 4) * 16;
+        let b = (a.DNA1&GeneMaskColor&0x00F) * 16;
+
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    const svg = (e) => {
+      let s = `<svg xmlns="http://www.w3.org/2000/svg"
+        width="${data.size*SvgRectSize+SvgRectSize*4}px"
+        height="${data.size*SvgRectSize+40+SvgRectSize*4}px"
+        viewBox="0 0 ${data.size*SvgRectSize+SvgRectSize*4} ${data.size*SvgRectSize+40+SvgRectSize*4}">`;
+
+      s += `<text y="24px" font-size="24px">${label(e)}</text>`;
+      s += `<rect
+        width="${data.size*SvgRectSize+SvgRectSize*2}px"
+        height="${data.size*SvgRectSize+SvgRectSize*2}px"
+        x="${SvgRectSize}" y="${SvgRectSize+40}"
+        fill="none" stroke="#000" stroke-width="${SvgRectSize}" />`;
+
+      const yOffset = 40 + SvgRectSize*2, xOffset = SvgRectSize*2;
+      for (let i = 0; i < data.epoch[e].state.length; i++) {
+        s += `<rect x="${data.epoch[e].state[i].X * SvgRectSize + xOffset}" y="${data.epoch[e].state[i].Y * SvgRectSize + yOffset}" width="${SvgRectSize}px" height="${SvgRectSize}px" stroke="none" fill="${getAgentColor(data.epoch[e].state[i])}" data-id="${data.epoch[e].state[i].ID}" />`;
+      }
+      return s + '</svg>';
+    };
+
+    const label = (e) => {
+        const ts = data.epoch[e].time / 1000;
+        return `Epoch #${e} - Population: ${data.epoch[e].state.length} (${ts < 1 ? data.epoch[e].time+'ms' : ts.toFixed(3)+'s'})`;
+    };
+
+    let data;
+    let currentEpoch = 0;
+    let playing = false;
+    let playerLoop = false;
+    let playerSpeed = 1;
+    let playerID;
+    let highlightAgents = [];
+
+    function loadJSON(_data) {
+        data = _data;
+        renderEpoch(0);
+        renderAgentList();
+    }
+
+    function renderAgentList() {
+        const aList = document.querySelector('#agents ol');
+        aList.innerHTML = '';
+        for (let i = 0; i < data.epoch[0].state.length; i++) {
+            const li = document.createElement('li');
+            li.setAttribute('data-id', data.epoch[0].state[i].ID);
+            li.innerText = data.epoch[0].state[i].ID;
+            aList.append(li);
+        }
+    }
+    function renderEpoch(e) {
+        currentEpoch = e;
+        document.getElementById('container').innerHTML = svg(e);
+        renderHighlightedAgents();
+    }
+    function nextEpoch() {
+        if (currentEpoch+1 <= data.totalEpochs) renderEpoch(currentEpoch+1);
+    }
+    function previousEpoch() {
+        if (currentEpoch-1 >= 0) renderEpoch(currentEpoch-1);
+    }
+    function playNextEpoch() {
+        if (currentEpoch < data.totalEpochs) {
+            nextEpoch();
+        } else if (playerLoop) {
+            renderEpoch(0);
+        } else {
+            playing = false;
+            document.getElementById('play').innerText = 'Play';
+            clearInterval(playerID);
+            playerID = null;
+        }
+    }
+
+    function renderHighlightedAgents() {
+        const svg = document.querySelector('#container svg');
+
+        if (highlightAgents.length < 1) {
+            svg.querySelectorAll('rect[data-id]').forEach(r => r.removeAttribute('fill-opacity'));
+        } else {
+            svg.querySelectorAll('rect[data-id]').forEach(r => r.setAttribute('fill-opacity', '.2'));
+            highlightAgents.forEach(id => svg.querySelector(`rect[data-id="${id}"]`).removeAttribute('fill-opacity'));
+        }
+    }
+
+    document.getElementById('next').addEventListener('click', nextEpoch);
+    document.getElementById('prev').addEventListener('click', previousEpoch);
+    document.getElementById('play').addEventListener('click', function() {
+        playing = !playing;
+        if (playing) {
+            this.innerText = 'Pause';
+            if (currentEpoch === data.totalEpochs) renderEpoch(0);
+            playerID = setInterval(playNextEpoch, 1000/playerSpeed);
+        } else {
+            this.innerText = 'Play';
+            clearInterval(playerID);
+        }
+    });
+    document.getElementById('speed').addEventListener('change', function() {
+        playerSpeed = this.value;
+        if (playing) {
+            clearInterval(playerID);
+            playerID = setInterval(playNextEpoch, 1000/playerSpeed);
+        }
+    });
+    document.getElementById('loop').addEventListener('change', function() {
+        playerLoop = this.checked;
+    });
+
+    document.querySelector('#agents ol').addEventListener('click', (evt) => {
+        if (evt.target.tagName !== 'LI') return;
+        evt.target.classList.toggle('selected');
+        highlightAgents = [].map.call(document.querySelectorAll('#agents .selected'), el => el.getAttribute('data-id'));
+        renderHighlightedAgents();
+    });
+
+  </script>
+</body>
+</html>
