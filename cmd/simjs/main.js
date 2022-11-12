@@ -5,10 +5,10 @@ const SimPopulation = 128;
 const SimEpochs = 20;
 
 const
-    GeneMaskColor = 0x0000000000000FFF,
-    GeneMaskSight = 0x000000000000F000,
-    GeneMaskSpeed = 0x00000000000F0000,
-    GeneMaskBrain = 0x0000FFFF00000000;
+    GeneMaskColor = 0x00000FFF, // DNA1
+    GeneMaskSight = 0x0000F000, // DNA1
+    GeneMaskSpeed = 0x000F0000, // DNA1
+    GeneMaskBrain = 0x0000FFFF; // DNA2
 const
     ActionMove = 'move',
     ActionEat  = 'eat',
