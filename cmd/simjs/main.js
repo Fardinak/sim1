@@ -69,16 +69,36 @@ function observe(a) {
     if (depth < 1) return [];
 
     let o = [];
-    const obs = (dir, dis, x) => x != null ? o.push({
+    const obs = (dir, dis, x) => o.push({
         direction: dir,
         distance:  dis,
         observation: readAgent(x),
-    }) : undefined;
+    });
 
-    if (a.X+1 < SimSize) for (let i = a.X+1; i <= Math.min(a.X+depth, SimSize-1); i++) obs('right', i, grid[i][a.Y]);
-    if (a.X-1 >= 0)      for (let i = a.X-1; i >= Math.max(a.X-depth, 0);         i--) obs('left',  i, grid[i][a.Y]);
-    if (a.Y+1 < SimSize) for (let i = a.Y+1; i <= Math.min(a.Y+depth, SimSize-1); i++) obs('down',  i, grid[a.X][i]);
-    if (a.Y-1 >= 0)      for (let i = a.Y-1; i >= Math.max(a.Y-depth, 0);         i--) obs('up',    i, grid[a.X][i]);
+    if (a.X+1 < SimSize) for (let i = a.X+1; i <= Math.min(a.X+depth, SimSize-1); i++) {
+        if (grid[i][a.Y] !== undefined) {
+            obs('right', i, grid[i][a.Y]);
+            break;
+        }
+    }
+    if (a.X-1 >= 0)      for (let i = a.X-1; i >= Math.max(a.X-depth, 0);         i--) {
+        if (grid[i][a.Y] !== undefined) {
+            obs('left', i, grid[i][a.Y]);
+            break;
+        }
+    }
+    if (a.Y+1 < SimSize) for (let i = a.Y+1; i <= Math.min(a.Y+depth, SimSize-1); i++) {
+        if (grid[a.X][i] !== undefined) {
+            obs('down', i, grid[a.X][i]);
+            break;
+        }
+    }
+    if (a.Y-1 >= 0)      for (let i = a.Y-1; i >= Math.max(a.Y-depth, 0);         i--) {
+        if (grid[a.X][i] !== undefined) {
+            obs('up', i, grid[a.X][i]);
+            break;
+        }
+    }
 
     return o;
 }
