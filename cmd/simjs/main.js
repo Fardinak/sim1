@@ -58,9 +58,34 @@ function readAgent(a) {
 
 function agentAction(a, o) {
     let dir = {1: 'left', 2: 'right', 3: 'up', 4: 'down'}[rrand(1, 4)];
+
+    const colorCloseness = (c1, c2) => {
+        return 1 / (
+            Math.abs(c1.R - c2.R) +
+            Math.abs(c1.G - c2.G) +
+            Math.abs(c1.B - c2.B) +
+            1);
+    }
+
+    let max = 0, mA, mC = readAgent(a).Color;
+    for (let i = 0; i < o.length; i++) {
+        let c = colorCloseness(mC, o[i].observation.Color);
+        if (c > max) {
+            max = c;
+            mA = o[i];
+        }
+    }
+
+    if (mA === undefined) {
+        return {
+            Action: ActionMove,
+            Direction: dir,
+        }
+    }
+
     return {
         Action: ActionMove,
-        Direction: dir,
+        Direction: mA.direction,
     }
 }
 
