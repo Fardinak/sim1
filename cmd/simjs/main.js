@@ -24,6 +24,7 @@ function NewRandomAgent() {
         Y: rrand(0, SimSize),
         DNA1: rrand(0, 2**32),
         DNA2: rrand(0, 2**32),
+        Gen: 1,
         ID: '0x'+(rrand(0, 2**32)>>>0).toString(16).toUpperCase(),
     }
 }
@@ -48,6 +49,7 @@ function populateGrid() {
 
 function readAgent(a) {
     return {
+        _agent: a,
         Color: {
             R: ((a.DNA1&GeneMaskColor&0xF00) >> 8) * 16,
             G: ((a.DNA1&GeneMaskColor&0x0F0) >> 4) * 16,
@@ -57,8 +59,6 @@ function readAgent(a) {
 }
 
 function agentAction(a, o) {
-    let dir = {1: 'left', 2: 'right', 3: 'up', 4: 'down'}[rrand(1, 4)];
-
     const colorCloseness = (c1, c2) => {
         return 1 / (
             Math.abs(c1.R - c2.R) +
@@ -79,7 +79,14 @@ function agentAction(a, o) {
     if (mA === undefined) {
         return {
             Action: ActionMove,
-            Direction: dir,
+            Direction: {1: 'left', 2: 'right', 3: 'up', 4: 'down'}[rrand(1, 4)],
+        }
+    }
+
+    if (mA.distance === 0) {
+        return {
+            Action: ActionMate,
+            Mate: mA.observation._agent,
         }
     }
 
@@ -171,10 +178,84 @@ function performAction(agent, action) {
         case ActionEat:
             break;
         case ActionMate:
+            requestMating(agent, action.Mate);
             break;
         default:
             throw new Error("unknown action: " + action);
     }
+}
+
+let matingRequests = {};
+function requestMating(agent1, agent2) {
+    if (matingRequests[agent2.ID] === agent1.ID) {
+        matingRequests[agent2.ID] = undefined;
+        mate(agent1, agent2);
+    }
+
+    matingRequests[agent1.ID] = agent2.ID;
+}
+
+function mate(agent1, agent2, strategy) {
+    const strategies = [
+        {
+            maskA1: 0x55555555,
+            maskA2: 0x55555555,
+            maskB1: 0xAAAAAAAA,
+            maskB2: 0xAAAAAAAA,
+        }
+    ];
+
+    if (strategy === undefined || strategy === null) {
+        strategy = rrand(0, strategies.length);
+    }
+
+    let offspring = {
+        X: -1,
+        Y: -1,
+        DNA1: 0x0,
+        DNA2: 0x0,
+        Gen: Math.max(agent1.Gen, agent2.Gen) + 1,
+        ID: '0x'+(rrand(0, 2**32)>>>0).toString(16).toUpperCase(),
+    };
+
+    // Compose the offspring's DNA
+    offspring.DNA1 = agent1.DNA1 & strategies[strategy].maskA1;
+    offspring.DNA1 |= agent2.DNA1 & strategies[strategy].maskB1;
+    offspring.DNA2 = agent1.DNA2 & strategies[strategy].maskA2;
+    offspring.DNA2 |= agent2.DNA2 & strategies[strategy].maskB2;
+
+    // TODO: Apply random mutations
+
+    // Locate the offspring
+    const pl = [
+        {oX: 0, oY: 1},   // S
+        {oX: 1, oY: 0},   // E
+        {oX: 0, oY: -1},  // N
+        {oX: -1, oY: 0},  // W
+        {oX: 1, oY: 1},   // SE
+        {oX: -1, oY: -1}, // NW
+        {oX: 1, oY: -1},  // NE
+        {oX: -1, oY: 1},  // SW
+    ];
+
+    for (let i = 0; i < pl.length; i++) {
+        let x = agent1.X + pl[i].oX;
+        let y = agent1.Y + pl[i].oY;
+
+        if (x < 0 || x >= SimSize || y < 0 || y >= SimSize) continue;
+
+        if (grid[x][y] === undefined) {
+            offspring.X = x;
+            offspring.Y = y;
+            break;
+        }
+    }
+
+    if (offspring.X === -1) return null;
+
+    population.push(offspring);
+    grid[offspring.X][offspring.Y] = offspring;
+    return offspring;
 }
 
 
@@ -201,6 +282,7 @@ for (let e = 1; e <= SimEpochs; e++) {
     const _start = Date.now();
     console.log(`Epoch #${e} started at ${_start}`);
 
+    matingRequests = {};
     for (let i = 0; i < population.length; i++) {
         let agent = population[i];
         let observation = observe(agent);
