@@ -1,8 +1,8 @@
 const fs = require('fs');
 
-const SimSize = 256;
-const SimPopulation = 128;
-const SimEpochs = 20;
+const SimSize = 150;
+const SimPopulation = 50;
+const SimEpochs = 100;
 
 const
     GeneMaskColor = 0x00000FFF, // DNA1
