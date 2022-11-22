@@ -109,25 +109,25 @@ function observe(a) {
 
     if (a.X+1 < SimSize) for (let i = a.X+1; i <= Math.min(a.X+depth, SimSize-1); i++) {
         if (grid[i][a.Y] !== undefined) {
-            obs('right', i, grid[i][a.Y]);
+            obs('right', i-a.X-1, grid[i][a.Y]);
             break;
         }
     }
     if (a.X-1 >= 0) for (let i = a.X-1; i >= Math.max(a.X-depth, 0); i--) {
         if (grid[i][a.Y] !== undefined) {
-            obs('left', i, grid[i][a.Y]);
+            obs('left', a.X-i-1, grid[i][a.Y]);
             break;
         }
     }
     if (a.Y+1 < SimSize) for (let i = a.Y+1; i <= Math.min(a.Y+depth, SimSize-1); i++) {
         if (grid[a.X][i] !== undefined) {
-            obs('down', i, grid[a.X][i]);
+            obs('down', i-a.Y-1, grid[a.X][i]);
             break;
         }
     }
     if (a.Y-1 >= 0) for (let i = a.Y-1; i >= Math.max(a.Y-depth, 0); i--) {
         if (grid[a.X][i] !== undefined) {
-            obs('up', i, grid[a.X][i]);
+            obs('up', a.Y-i-1, grid[a.X][i]);
             break;
         }
     }
