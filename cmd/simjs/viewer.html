@@ -104,8 +104,8 @@
       reader.readAsText(evt.dataTransfer.files[0]);
     });
 
-    const SvgRectSize = 3;
-    const GeneMaskColor = 0x0000000000000FFF;
+    const SvgRectSize = 5;
+    const GeneMaskColor = 0x00000FFF;
 
     function getAgentColor(a) {
         let r = ((a.DNA1&GeneMaskColor&0xF00) >> 8) * 16;
