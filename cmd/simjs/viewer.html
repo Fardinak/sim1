@@ -5,10 +5,15 @@
     <title>SIM1.1 VIEWER</title>
 
     <style>
-      html, body { height: 100%; }
+      html, body {
+          height: 100%;
+          margin: 0;
+      }
       h1, h2, h3, h4, h5, h6 { margin:0; }
       body {
           font-family: monospace;
+          padding: 8px;
+          box-sizing: border-box;
       }
       .dragging {
         background: cadetblue;
@@ -27,11 +32,14 @@
           position: absolute;
           top: 120px;
           right: 20px;
-          width: 130px;
-          padding: 5px;
+          min-width: 130px;
+          max-height: calc(100% - 150px);
+          padding: 7px 14px 7px 5px;
+          overflow-y: scroll;
           border-radius: 2px;
           border: 1px solid #d8d8d8;
       }
+      #agents ol { padding-inline-start: 60px; }
       #agents li:hover {
           background: rgba(0, 0, 0, .1);
           cursor: pointer;
@@ -142,24 +150,43 @@
 
     function loadJSON(_data) {
         data = _data;
+        highlightAgents = [];
+
         renderEpoch(0);
-        renderAgentList();
     }
 
-    function renderAgentList() {
+    function renderAgentList(e) {
         const aList = document.querySelector('#agents ol');
         aList.innerHTML = '';
-        highlightAgents = [];
-        for (let i = 0; i < data.epoch[0].state.length; i++) {
+
+        for (let i = 0; i < data.epoch[e].state.length; i++) {
             const li = document.createElement('li');
-            li.setAttribute('data-id', data.epoch[0].state[i].ID);
-            li.innerText = data.epoch[0].state[i].ID;
+            li.setAttribute('data-id', data.epoch[e].state[i].ID);
+            li.innerText = data.epoch[e].state[i].ID;
+            if (highlightAgents.indexOf(data.epoch[e].state[i].ID) != -1) {
+                li.classList.add('selected');
+            }
             aList.append(li);
         }
     }
+
+    function renderHighlightedAgents() {
+        const svg = document.querySelector('#container svg');
+
+        if (highlightAgents.length < 1) {
+            svg.querySelectorAll('rect[data-id]').forEach(r => r.removeAttribute('fill-opacity'));
+        } else {
+            svg.querySelectorAll('rect[data-id]').forEach(r => r.setAttribute('fill-opacity', '.15'));
+            highlightAgents.forEach(id => svg.querySelector(`rect[data-id="${id}"]`).removeAttribute('fill-opacity'));
+        }
+    }
+
     function renderEpoch(e) {
         currentEpoch = e;
+
         document.getElementById('container').innerHTML = svg(e);
+
+        renderAgentList(e);
         renderHighlightedAgents();
     }
     function nextEpoch() {
@@ -178,17 +205,6 @@
             document.getElementById('play').innerText = 'Play';
             clearInterval(playerID);
             playerID = null;
-        }
-    }
-
-    function renderHighlightedAgents() {
-        const svg = document.querySelector('#container svg');
-
-        if (highlightAgents.length < 1) {
-            svg.querySelectorAll('rect[data-id]').forEach(r => r.removeAttribute('fill-opacity'));
-        } else {
-            svg.querySelectorAll('rect[data-id]').forEach(r => r.setAttribute('fill-opacity', '.1'));
-            highlightAgents.forEach(id => svg.querySelector(`rect[data-id="${id}"]`).removeAttribute('fill-opacity'));
         }
     }
 
