@@ -274,6 +274,7 @@ let sim_log = {
         {
             time: 0,
             state: JSON.parse(JSON.stringify(population)),
+            actions: {},
         },
     ],
 };
@@ -282,11 +283,15 @@ for (let e = 1; e <= SimEpochs; e++) {
     const _start = Date.now();
     console.log(`Epoch #${e} started at ${_start}`);
 
+    let actions = {};
+
     matingRequests = {};
     for (let i = 0; i < population.length; i++) {
         let agent = population[i];
         let observation = observe(agent);
         let action = agentAction(agent, observation);
+
+        actions[agent.ID] = action;
 
         performAction(agent, action);
     }
@@ -294,6 +299,7 @@ for (let e = 1; e <= SimEpochs; e++) {
     sim_log.epoch.push({
         time: Date.now() - _start,
         state: JSON.parse(JSON.stringify(population)),
+        actions,
     });
 }
 

@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIM1.1 VIEWER</title>
+    <title>SIM1 VIEWER</title>
 
     <style>
       html, body {
           height: 100%;
           margin: 0;
       }
-      h1, h2, h3, h4, h5, h6 { margin:0; }
+      h1, h2, h3, h4, h5, h6, pre { margin:0; }
       body {
           font-family: monospace;
           padding: 8px;
@@ -17,6 +17,14 @@
       }
       .dragging {
         background: cadetblue;
+      }
+      #container { float: left; }
+      #meta {
+          float: left;
+          margin: 40px 0 0 20px;
+          padding: 15px;
+          border-radius: 10px;
+          border: 1px solid #d8d8d8;
       }
       #controls {
           position: absolute;
@@ -76,6 +84,8 @@
     </div>
 
     <div id="container"></div>
+
+    <div id="meta"></div>
 
   <script>
     document.querySelector('body').addEventListener('dragenter', () => {
@@ -160,10 +170,11 @@
         aList.innerHTML = '';
 
         for (let i = 0; i < data.epoch[e].state.length; i++) {
+            const agentID = data.epoch[e].state[i].ID;
             const li = document.createElement('li');
-            li.setAttribute('data-id', data.epoch[e].state[i].ID);
-            li.innerText = data.epoch[e].state[i].ID;
-            if (highlightAgents.indexOf(data.epoch[e].state[i].ID) != -1) {
+            li.setAttribute('data-id', agentID);
+            li.innerText = agentID;
+            if (highlightAgents.indexOf(agentID) !== -1) {
                 li.classList.add('selected');
             }
             aList.append(li);
@@ -175,10 +186,32 @@
 
         if (highlightAgents.length < 1) {
             svg.querySelectorAll('rect[data-id]').forEach(r => r.removeAttribute('fill-opacity'));
+            renderMetadata(null);
         } else {
             svg.querySelectorAll('rect[data-id]').forEach(r => r.setAttribute('fill-opacity', '.15'));
             highlightAgents.forEach(id => svg.querySelector(`rect[data-id="${id}"]`).removeAttribute('fill-opacity'));
         }
+
+        if (highlightAgents.length === 1) {
+            renderMetadata({
+                info: data.epoch[currentEpoch].state[
+                    data.epoch[currentEpoch].state.findIndex(a => a.ID === highlightAgents[0])
+                    ],
+                prevAction: data.epoch[currentEpoch].actions[highlightAgents[0]] || null,
+                nextAction: currentEpoch+1 >= data.epoch.length ? null :
+                    data.epoch[currentEpoch+1].actions[highlightAgents[0]],
+            });
+        }
+    }
+
+    function renderMetadata(data) {
+        if (data === null) {
+            document.getElementById('meta').innerHTML = '';
+            return;
+        }
+
+        console.log(data);
+        document.getElementById('meta').innerHTML = '<pre>'+JSON.stringify(data, null, 2)+'</pre>';
     }
 
     function renderEpoch(e) {
