@@ -125,7 +125,10 @@
         return `rgb(${r}, ${g}, ${b})`;
     }
 
-    const svg = (e) => {
+    let renderCache = [];
+    function svg(e) {
+      if (renderCache[e] !== undefined) return renderCache[e];
+
       let s = `<svg xmlns="http://www.w3.org/2000/svg"
         width="${data.size*SvgRectSize+SvgRectSize*4}px"
         height="${data.size*SvgRectSize+40+SvgRectSize*4}px"
@@ -142,13 +145,15 @@
       for (let i = 0; i < data.epoch[e].state.length; i++) {
         s += `<rect x="${data.epoch[e].state[i].X * SvgRectSize + xOffset}" y="${data.epoch[e].state[i].Y * SvgRectSize + yOffset}" width="${SvgRectSize}px" height="${SvgRectSize}px" stroke="none" fill="${getAgentColor(data.epoch[e].state[i])}" data-id="${data.epoch[e].state[i].ID}" />`;
       }
-      return s + '</svg>';
-    };
 
-    const label = (e) => {
+      renderCache[e] = s + '</svg>';
+      return renderCache[e];
+    }
+
+    function label(e) {
         const ts = data.epoch[e].time / 1000;
         return `Epoch #${e} - Population: ${data.epoch[e].state.length} (${ts < 1 ? data.epoch[e].time+'ms' : ts.toFixed(3)+'s'})`;
-    };
+    }
 
     let data;
     let currentEpoch = 0;
@@ -160,6 +165,7 @@
 
     function loadJSON(_data) {
         data = _data;
+        renderCache = [];
         highlightAgents = [];
 
         renderEpoch(0);
