@@ -194,9 +194,7 @@
 
         if (highlightAgents.length === 1) {
             renderMetadata({
-                info: data.epoch[currentEpoch].state[
-                    data.epoch[currentEpoch].state.findIndex(a => a.ID === highlightAgents[0])
-                    ],
+                info: data.epoch[currentEpoch].state.find(a => a.ID === highlightAgents[0]),
                 prevAction: data.epoch[currentEpoch].actions[highlightAgents[0]] || null,
                 nextAction: currentEpoch+1 >= data.epoch.length ? null :
                     data.epoch[currentEpoch+1].actions[highlightAgents[0]],

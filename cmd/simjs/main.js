@@ -86,7 +86,7 @@ function agentAction(a, o) {
     if (mA.distance === 0) {
         return {
             Action: ActionMate,
-            Mate: mA.observation._agent,
+            Mate: mA.observation._agent.ID,
         }
     }
 
@@ -186,13 +186,13 @@ function performAction(agent, action) {
 }
 
 let matingRequests = {};
-function requestMating(agent1, agent2) {
-    if (matingRequests[agent2.ID] === agent1.ID) {
-        matingRequests[agent2.ID] = undefined;
-        mate(agent1, agent2);
+function requestMating(agent, mateID) {
+    if (matingRequests[mateID] === agent.ID) {
+        matingRequests[mateID] = undefined;
+        mate(agent, population.find(a => a.ID === mateID));
     }
 
-    matingRequests[agent1.ID] = agent2.ID;
+    matingRequests[agent.ID] = mateID;
 }
 
 function mate(agent1, agent2, strategy) {
