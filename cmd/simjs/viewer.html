@@ -28,6 +28,15 @@
           border-radius: 10px;
           border: 1px solid #d8d8d8;
       }
+
+      #reports {
+          float: left;
+          margin: 40px 0 0 20px;
+          padding: 15px;
+          border-radius: 10px;
+          border: 1px solid #d8d8d8;
+      }
+
       #controls {
           position: absolute;
           top: 20px;
@@ -57,6 +66,47 @@
       }
       #agents li.selected {
           background: rgba(0, 0, 0, .2);
+      }
+
+      #modal {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          box-sizing: border-box;
+          border-radius: 15px;
+          background: rgba(0, 0, 0, .1);
+          backdrop-filter: grayscale(100%) blur(1px);
+          -webkit-backdrop-filter: grayscale(100%) blur(1px);
+          z-index: 9999;
+
+          flex: none;
+          justify-content: center;
+          align-items: center;
+
+          display: none;
+      }
+      #modal.show { display: flex; }
+      #modal::after {
+          content: '╳';
+          position: absolute;
+          top: 20px;
+          right: 25px;
+          font-weight: bolder;
+          font-size: 26px;
+          text-shadow: 0 0 10px rgba(0, 0, 0, 1);
+          cursor: pointer;
+      }
+      #modal main {
+          position: absolute;
+          width: 800px;
+          height: 400px;
+          padding: 20px;
+          background: white;
+          box-shadow: 0 0 20px rgba(0, 0, 0, .5);
+          border: 1px solid #bbb;
+          border-radius: 10px;
       }
     </style>
 </head>
@@ -93,7 +143,17 @@
     <div id="container"></div>
 
     <div id="meta"></div>
+    <div id="reports">
+        <h4>Reports:</h4>
+        <button id="report-pop-growth">Population Growth</button>
+        <button id="report-gen-growth">Gen Growth</button>
+    </div>
 
+    <div id="modal">
+        <main></main>
+    </div>
+
+    <script src="lib/chart.js"></script>
   <script>
     const SvgRectSize = 5;
     const GeneMaskColor = 0x00000FFF;
@@ -349,6 +409,114 @@
         renderHighlightedAgents();
     });
     document.getElementById('agents-filters').addEventListener('change', readFilters);
+
+    document.getElementById('modal').addEventListener('click', (evt) => {
+        if (evt.target.matches('#modal')) evt.target.classList.remove('show');
+    });
+    document.getElementById('report-pop-growth').addEventListener('click', () => {
+        const modal = document.getElementById('modal');
+        const container = modal.querySelector('main');
+        container.innerHTML = '';
+
+        const canvas = document.createElement('canvas');
+        container.append(canvas);
+
+        let dataset = data.epoch.map(epoch => epoch.state.length);
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Population',
+                    data: dataset,
+                }],
+                labels: dataset.map((_, i) => i),
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: "Epoch" } },
+                    y: { title: { display: true, text: "Population" } },
+                },
+                interaction: {
+                    intersect: false,
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Population Growth",
+                    },
+                },
+            },
+        });
+
+        modal.classList.add('show');
+    });
+    document.getElementById('report-gen-growth').addEventListener('click', () => {
+        const modal = document.getElementById('modal');
+        const container = modal.querySelector('main');
+        container.innerHTML = '';
+
+        const canvas = document.createElement('canvas');
+        container.append(canvas);
+
+        let counted = data.epoch[0].state.map(a => a.ID);
+        let accGens = [];
+        let dataset = [];
+
+        data.epoch.forEach((epoch, e) => {
+            let agents = epoch.state
+                .filter(a => !counted.includes(a.ID));
+
+            counted = counted.concat(agents.map(a => a.ID));
+
+            let gens = agents.reduce(
+                (gens, agent) => {
+                    gens[agent.Gen] = gens[agent.Gen] ? gens[agent.Gen]+1 : 1;
+                    return gens;
+                }, []
+            );
+
+            gens = gens.map((pop, g) => {
+                let newBirths = pop - (accGens[g] || 0);
+                accGens[g] = (accGens[g] || 0) + newBirths;
+                return newBirths
+            }).filter(pop => pop > 0);
+
+            gens = gens.map((newBirths, gen) => ({
+                x: e,
+                y: gen,
+                r: newBirths,
+            }));
+
+            dataset = dataset.concat(gens);
+        });
+
+        new Chart(canvas, {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'New births',
+                    data: dataset,
+                }],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: "Epoch" } },
+                    y: { title: { display: true, text: "Generation" } },
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Generational Growth",
+                    },
+                },
+            },
+        });
+
+        modal.classList.add('show');
+    });
   </script>
 </body>
 </html>
