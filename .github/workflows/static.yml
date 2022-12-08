@@ -35,7 +35,9 @@ jobs:
       - name: Make dist dir
         run: mkdir dist
       - name: Add files
-        run: cp cmd/simjs/viewer.html dist/index.html
+        run: |
+          cp cmd/simjs/viewer.html dist/index.html
+          sed 's/lib\/chart\.js/https\:\/\/cdnjs.com\/libraries\/Chart.js/' dist/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
