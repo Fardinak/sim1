@@ -286,9 +286,10 @@ for (let e = 1; e <= SimEpochs; e++) {
     console.log(`Epoch #${e} started at ${_start}`);
 
     let actions = {};
-
     matingRequests = {};
-    for (let i = 0; i < population.length; i++) {
+
+    let curPop = population.length;
+    for (let i = 0; i < curPop; i++) {
         let agent = population[i];
         let observation = observe(agent);
         let action = agentAction(agent, observation);
