@@ -222,6 +222,7 @@
 
     function renderHighlightedAgents() {
         const svg = document.querySelector('#container svg');
+        if (!svg) return;
 
         if (highlightAgents.length < 1) {
             svg.querySelectorAll('rect[data-id]').forEach(r => r.removeAttribute('fill-opacity'));
