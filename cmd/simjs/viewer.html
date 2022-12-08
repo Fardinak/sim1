@@ -80,6 +80,10 @@
 
     <div id="agents">
         <h4>Agents:</h4>
+        <form id="agents-filters" onsubmit="return false">
+            <label for="filter-gen">Gen:</label>
+            <input type="number" name="Gen" id="filter-gen" min="1" max="9999">
+        </form>
         <ol></ol>
     </div>
 
@@ -162,13 +166,66 @@
     let playerSpeed = 1;
     let playerID;
     let highlightAgents = [];
+    let filters = {};
 
     function loadJSON(_data) {
         data = _data;
         renderCache = [];
+
+        configureFilters();
+        renderEpoch(0);
+    }
+
+    function configureFilters() {
+        resetFilters();
+
+        let gen = document.getElementById('filter-gen');
+        gen.setAttribute('max', data.epoch[data.totalEpochs-1].state.sort((a, b) => b.Gen - a.Gen)[0].Gen);
+    }
+
+    function readFilters() {
+        let form    = document.getElementById('agents-filters');
+        let entries = new FormData(form).entries();
+
+        filters = {};
+        for (let f of entries) {
+            if (form.querySelector(`[name="${f[0]}"]`).getAttribute('type') === 'number') {
+                filters[f[0]] = parseFloat(f[1]);
+            } else {
+                filters[f[0]] = f[1];
+            }
+        }
+
+        filterAgents();
+    }
+
+    function resetFilters() {
+        let form = document.getElementById('agents-filters');
+        form.reset();
+
+        filters = {};
         highlightAgents = [];
 
-        renderEpoch(0);
+        renderHighlightedAgents();
+    }
+
+    function filterAgents() {
+        if (Object.keys(filters).length === 0) return;
+
+        data.epoch[currentEpoch].state.forEach((agent) => {
+            let selected = true;
+            for (let f of Object.keys(filters)) {
+                if (agent[f] !== filters[f]) {
+                    selected = false;
+                    break;
+                }
+            }
+
+            document.querySelector(`#agents li[data-id="${agent.ID}"]`).classList.toggle('selected', selected);
+        });
+
+        highlightAgents = [].map.call(document.querySelectorAll('#agents .selected'), el => el.getAttribute('data-id'));
+        renderHighlightedAgents();
     }
 
     function renderAgentList(e) {
@@ -224,6 +281,7 @@
         document.getElementById('container').innerHTML = svg(e);
 
         renderAgentList(e);
+        filterAgents();
         renderHighlightedAgents();
     }
     function nextEpoch() {
@@ -281,7 +339,6 @@
         highlightAgents = [].map.call(document.querySelectorAll('#agents .selected'), el => el.getAttribute('data-id'));
         renderHighlightedAgents();
     });
-
     document.getElementById('container').addEventListener('click', (evt) => {
         if (evt.target.tagName !== 'rect') return;
         const id = evt.target.getAttribute('data-id');
@@ -289,7 +346,7 @@
         highlightAgents = [].map.call(document.querySelectorAll('#agents .selected'), el => el.getAttribute('data-id'));
         renderHighlightedAgents();
     });
-
+    document.getElementById('agents-filters').addEventListener('change', readFilters);
   </script>
 </body>
 </html>
