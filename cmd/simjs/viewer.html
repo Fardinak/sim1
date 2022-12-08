@@ -18,7 +18,9 @@
       .dragging {
         background: cadetblue;
       }
+
       #container { float: left; }
+
       #meta {
           float: left;
           margin: 40px 0 0 20px;
@@ -36,6 +38,7 @@
           border: 1px solid #d8d8d8;
           box-shadow: 0 0 10px rgba(0, 0, 0, .1);
       }
+
       #agents {
           position: absolute;
           top: 120px;
@@ -92,32 +95,6 @@
     <div id="meta"></div>
 
   <script>
-    document.querySelector('body').addEventListener('dragenter', () => {
-      document.body.classList.add('dragging');
-    });
-    document.querySelector('body').addEventListener('dragleave', () => {
-      document.body.classList.remove('dragging');
-    });
-    document.querySelector('body').addEventListener('dragover', (evt) => {
-      evt.preventDefault();
-      evt.stopPropagation();
-    });
-    document.querySelector('body').addEventListener('drop', (evt) => {
-      evt.preventDefault();
-      evt.stopPropagation();
-      document.body.classList.remove('dragging');
-
-      if (evt.dataTransfer.files.length < 1 || evt.dataTransfer.files[0].type !== 'application/json') {
-        return alert('unsupported file');
-      }
-
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        loadJSON(JSON.parse(reader.result));
-      });
-      reader.readAsText(evt.dataTransfer.files[0]);
-    });
-
     const SvgRectSize = 5;
     const GeneMaskColor = 0x00000FFF;
 
@@ -146,8 +123,8 @@
         fill="none" stroke="#000" stroke-width="${SvgRectSize}" />`;
 
       const yOffset = 40 + SvgRectSize*2, xOffset = SvgRectSize*2;
-      for (let i = 0; i < data.epoch[e].state.length; i++) {
-        s += `<rect x="${data.epoch[e].state[i].X * SvgRectSize + xOffset}" y="${data.epoch[e].state[i].Y * SvgRectSize + yOffset}" width="${SvgRectSize}px" height="${SvgRectSize}px" stroke="none" fill="${getAgentColor(data.epoch[e].state[i])}" data-id="${data.epoch[e].state[i].ID}" />`;
+      for (let agent of data.epoch[e].state) {
+        s += `<rect x="${agent.X * SvgRectSize + xOffset}" y="${agent.Y * SvgRectSize + yOffset}" width="${SvgRectSize}px" height="${SvgRectSize}px" stroke="none" fill="${getAgentColor(agent)}" data-id="${agent.ID}" />`;
       }
 
       renderCache[e] = s + '</svg>';
@@ -232,12 +209,11 @@
         const aList = document.querySelector('#agents ol');
         aList.innerHTML = '';
 
-        for (let i = 0; i < data.epoch[e].state.length; i++) {
-            const agentID = data.epoch[e].state[i].ID;
+        for (let agent of data.epoch[e].state) {
             const li = document.createElement('li');
-            li.setAttribute('data-id', agentID);
-            li.innerText = agentID;
-            if (highlightAgents.indexOf(agentID) !== -1) {
+            li.setAttribute('data-id', agent.ID);
+            li.innerText = agent.ID;
+            if (highlightAgents.indexOf(agent.ID) !== -1) {
                 li.classList.add('selected');
             }
             aList.append(li);
@@ -271,7 +247,6 @@
             return;
         }
 
-        console.log(data);
         document.getElementById('meta').innerHTML = '<pre>'+JSON.stringify(data, null, 2)+'</pre>';
     }
 
@@ -302,6 +277,32 @@
             playerID = null;
         }
     }
+
+    document.querySelector('body').addEventListener('dragenter', () => {
+        document.body.classList.add('dragging');
+    });
+    document.querySelector('body').addEventListener('dragleave', () => {
+        document.body.classList.remove('dragging');
+    });
+    document.querySelector('body').addEventListener('dragover', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+    });
+    document.querySelector('body').addEventListener('drop', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        document.body.classList.remove('dragging');
+
+        if (evt.dataTransfer.files.length < 1 || evt.dataTransfer.files[0].type !== 'application/json') {
+            return alert('unsupported file');
+        }
+
+        const reader = new FileReader();
+        reader.addEventListener('load', () => {
+            loadJSON(JSON.parse(reader.result));
+        });
+        reader.readAsText(evt.dataTransfer.files[0]);
+    });
 
     document.getElementById('next').addEventListener('click', () => {
         if (currentEpoch < data.totalEpochs) {
