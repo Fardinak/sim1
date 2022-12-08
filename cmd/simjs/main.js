@@ -216,6 +216,8 @@ function mate(agent1, agent2, strategy) {
         DNA2: 0x0,
         Gen: Math.max(agent1.Gen, agent2.Gen) + 1,
         ID: '0x'+(rrand(0, 2**32)>>>0).toString(16).toUpperCase(),
+
+        _parents: [agent1.ID, agent2.ID],
     };
 
     // Compose the offspring's DNA
