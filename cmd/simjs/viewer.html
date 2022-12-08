@@ -156,7 +156,10 @@
     <script src="lib/chart.js"></script>
   <script>
     const SvgRectSize = 5;
-    const GeneMaskColor = 0x00000FFF;
+    const
+        GeneMaskColor = 0x00000FFF, // DNA1
+        GeneMaskSight = 0x0000F000, // DNA1
+        GeneMaskSpeed = 0x000F0000; // DNA1
 
     function getAgentColor(a) {
         let r = ((a.DNA1&GeneMaskColor&0xF00) >> 8) * 16;
@@ -293,13 +296,30 @@
         }
 
         if (highlightAgents.length === 1) {
+            let agent = data.epoch[currentEpoch].state.find(a => a.ID === highlightAgents[0]);
+
             renderMetadata({
-                info: data.epoch[currentEpoch].state.find(a => a.ID === highlightAgents[0]),
-                prevAction: data.epoch[currentEpoch].actions[highlightAgents[0]] || null,
+                info: Object.assign({}, agent, {
+                    DNA1: toAbsHexString(agent.DNA1),
+                    DNA2: toAbsHexString(agent.DNA2),
+                }),
+                properties: {
+                    Color: getAgentColor(agent),
+                    Sight: (agent.DNA1&GeneMaskSight) >> 12,
+                    Speed: (agent.DNA1&GeneMaskSpeed) >> 16,
+                },
+                prevAction: data.epoch[currentEpoch].actions[agent.ID] || null,
                 nextAction: currentEpoch+1 >= data.epoch.length ? null :
-                    data.epoch[currentEpoch+1].actions[highlightAgents[0]],
+                    data.epoch[currentEpoch+1].actions[agent.ID],
             });
         }
+    }
+
+    function toAbsHexString(num) {
+        if (num < 0) {
+            num += 0xFFFFFFFF+1;
+        }
+        return '0x'+num.toString(16).toUpperCase();
     }
 
     function renderMetadata(data) {
