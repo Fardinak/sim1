@@ -37,7 +37,7 @@ jobs:
       - name: Add files
         run: |
           cp cmd/simjs/viewer.html dist/index.html
-          sed -i -e 's/lib\/chart\.js/https\:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/Chart\.js\/4\.0\.1\/chart\.umd\.min\.js' dist/index.html
+          sed -i -e 's/lib\/chart\.js/https\:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/Chart\.js\/4\.0\.1\/chart\.umd\.min\.js/' dist/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
