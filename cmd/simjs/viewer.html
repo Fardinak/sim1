@@ -42,6 +42,17 @@
           border-radius: 10px;
           border: 1px solid #d8d8d8;
       }
+      #gene-rep {
+          width: 100%;
+          height: 25px;
+          display: flex;
+      }
+      #gene-rep span {
+          display: inline-block;
+          flex: 1;
+          background-color: #d8d8d8;
+      }
+      #gene-rep span[x-value="1"] { background-color: #444; }
 
       #reports {
           padding: 15px;
@@ -327,10 +338,7 @@
             let agent = data.epoch[currentEpoch].state.find(a => a.ID === highlightAgents[0]);
 
             renderMetadata({
-                info: Object.assign({}, agent, {
-                    DNA1: toAbsHexString(agent.DNA1),
-                    DNA2: toAbsHexString(agent.DNA2),
-                }),
+                info: agent,
                 properties: {
                     Color: getAgentColor(agent),
                     Sight: (agent.DNA1&GeneMaskSight) >> 12,
@@ -343,11 +351,11 @@
         }
     }
 
-    function toAbsHexString(num) {
+    function toAbsString(num, radix) {
         if (num < 0) {
             num += 0xFFFFFFFF+1;
         }
-        return '0x'+num.toString(16).toUpperCase();
+        return num.toString(radix).toUpperCase();
     }
 
     function renderMetadata(data) {
@@ -356,7 +364,13 @@
             return;
         }
 
-        document.getElementById('meta').innerHTML = '<pre>'+JSON.stringify(data, null, 2)+'</pre>';
+        document.getElementById('meta').innerHTML = '<pre>'+JSON.stringify(data, null, 2)+'</pre>' +
+            data.info && data.info.DNA1 && data.info.DNA2 ?
+            '<div id="gene-rep">' +
+                // DNA2 is the most significant bits, so it has to come first
+                toAbsString(data.info.DNA2, 2).split('').map(b => `<span x-value="${b}"></span>`).join('') +
+                toAbsString(data.info.DNA1, 2).split('').map(b => `<span x-value="${b}"></span>`).join('') +
+            '</div>' : '';
     }
 
     function renderEpoch(e) {
