@@ -334,8 +334,8 @@
             highlightAgents.forEach(id => svg.querySelector(`rect[data-id="${id}"]`).removeAttribute('fill-opacity'));
         }
 
-        if (highlightAgents.length === 1) {
-            let agent = data.epoch[currentEpoch].state.find(a => a.ID === highlightAgents[0]);
+        if (highlightAgents.length > 0) {
+            let agent = data.epoch[currentEpoch].state.find(a => a.ID === highlightAgents[highlightAgents.length-1]);
 
             renderMetadata({
                 info: agent,
