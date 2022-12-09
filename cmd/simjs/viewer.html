@@ -177,25 +177,32 @@
         return `rgb(${r}, ${g}, ${b})`;
     }
 
-    let renderCache = [];
     function svg(e) {
       if (renderCache[e] !== undefined) return renderCache[e];
 
       let s = `<svg xmlns="http://www.w3.org/2000/svg"
-        width="${data.size*SvgRectSize+SvgRectSize*4}px"
-        height="${data.size*SvgRectSize+40+SvgRectSize*4}px"
-        viewBox="0 0 ${data.size*SvgRectSize+SvgRectSize*4} ${data.size*SvgRectSize+40+SvgRectSize*4}">`;
+        width="${svgConf.canvas.width}px"
+        height="${svgConf.canvas.height}px"
+        viewBox="0 0 ${svgConf.canvas.width} ${svgConf.canvas.height}">`;
 
       s += `<text y="24px" font-size="24px">${label(e)}</text>`;
       s += `<rect
-        width="${data.size*SvgRectSize+SvgRectSize*2}px"
-        height="${data.size*SvgRectSize+SvgRectSize*2}px"
-        x="${SvgRectSize}" y="${SvgRectSize+40}"
-        fill="none" stroke="#000" stroke-width="${SvgRectSize}" />`;
+        width="${svgConf.borderBox.width}px"
+        height="${svgConf.borderBox.height}px"
+        x="${svgConf.borderBox.offsetX}" y="${svgConf.borderBox.offsetY}"
+        fill="none" stroke="#000" stroke-width="${svgConf.borderBox.borderWidth}" />`;
 
-      const yOffset = 40 + SvgRectSize*2, xOffset = SvgRectSize*2;
+      const xOffset = svgConf.borderBox.offsetX + svgConf.borderBox.borderWidth;
+      const yOffset = svgConf.borderBox.offsetY + svgConf.borderBox.borderWidth;
       for (let agent of data.epoch[e].state) {
-        s += `<rect x="${agent.X * SvgRectSize + xOffset}" y="${agent.Y * SvgRectSize + yOffset}" width="${SvgRectSize}px" height="${SvgRectSize}px" stroke="none" fill="${getAgentColor(agent)}" data-id="${agent.ID}" />`;
+        s += `<rect
+            x="${agent.X * SvgRectSize + xOffset}"
+            y="${agent.Y * SvgRectSize + yOffset}"
+            width="${SvgRectSize}px"
+            height="${SvgRectSize}px"
+            stroke="none"
+            fill="${getAgentColor(agent)}"
+            data-id="${agent.ID}" />`;
       }
 
       renderCache[e] = s + '</svg>';
@@ -208,17 +215,32 @@
     }
 
     let data;
+    let svgConf;
+    let renderCache = [];
+    let highlightAgents = [];
+    let filters = {};
     let currentEpoch = 0;
     let playing = false;
     let playerLoop = false;
     let playerSpeed = 1;
-    let playerID;
-    let highlightAgents = [];
-    let filters = {};
+    let playerID; // IntervalID
 
     function loadJSON(_data) {
         data = _data;
         renderCache = [];
+        svgConf = {
+            canvas: {
+                width:  data.size*SvgRectSize + SvgRectSize*4,
+                height: data.size*SvgRectSize + 40 + SvgRectSize*4,
+            },
+            borderBox: {
+                width:       data.size*SvgRectSize + SvgRectSize*2,
+                height:      data.size*SvgRectSize + SvgRectSize*2,
+                offsetX:     SvgRectSize,
+                offsetY:     SvgRectSize + 40,
+                borderWidth: SvgRectSize,
+            },
+        };
 
         configureFilters();
         renderEpoch(0);
