@@ -365,12 +365,12 @@
         }
 
         document.getElementById('meta').innerHTML = '<pre>'+JSON.stringify(data, null, 2)+'</pre>' +
-            data.info && data.info.DNA1 && data.info.DNA2 ?
+            (data.info && data.info.DNA1 && data.info.DNA2 ?
             '<div id="gene-rep">' +
                 // DNA2 is the most significant bits, so it has to come first
                 toAbsString(data.info.DNA2, 2).split('').map(b => `<span x-value="${b}"></span>`).join('') +
                 toAbsString(data.info.DNA1, 2).split('').map(b => `<span x-value="${b}"></span>`).join('') +
-            '</div>' : '';
+            '</div>' : '');
     }
 
     function renderEpoch(e) {
