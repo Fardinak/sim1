@@ -239,6 +239,7 @@ function mate(agent1, agent2, strategy) {
         {oX: 1, oY: -1},  // NE
         {oX: -1, oY: 1},  // SW
     ];
+    let al = [];
 
     for (let i = 0; i < pl.length; i++) {
         let x = agent1.X + pl[i].oX;
@@ -246,14 +247,14 @@ function mate(agent1, agent2, strategy) {
 
         if (x < 0 || x >= SimSize || y < 0 || y >= SimSize) continue;
 
-        if (grid[x][y] === undefined) {
-            offspring.X = x;
-            offspring.Y = y;
-            break;
-        }
+        if (grid[x][y] === undefined) al.push([x, y]);
     }
 
-    if (offspring.X === -1) return null;
+    if (!al.length) return null;
+
+    const [x, y] = al[rrand(0, al.length-1)];
+    offspring.X = x;
+    offspring.Y = y;
 
     population.push(offspring);
     grid[offspring.X][offspring.Y] = offspring;
