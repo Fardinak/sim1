@@ -5,10 +5,10 @@ const SimPopulation = 50;
 const SimEpochs = 100;
 
 const
-    GeneMaskColor = 0x00000FFF, // DNA1
-    GeneMaskSight = 0x0000F000, // DNA1
-    GeneMaskSpeed = 0x000F0000, // DNA1
-    GeneMaskBrain = 0x0000FFFF; // DNA2
+    GeneMaskColor = 0x00000FFF,
+    GeneMaskSight = 0x0000F000,
+    GeneMaskSpeed = 0x000F0000,
+    GeneMaskBrain = 0xFFF00000;
 const
     ActionMove = 'move',
     ActionEat  = 'eat',
@@ -20,12 +20,11 @@ function rrand(min, max) {
 
 function NewRandomAgent() {
     return {
-        X: rrand(0, SimSize),
-        Y: rrand(0, SimSize),
-        DNA1: rrand(0, 2**32),
-        DNA2: rrand(0, 2**32),
-        Gen: 1,
-        ID: '0x'+(rrand(0, 2**32)>>>0).toString(16).toUpperCase(),
+        x: rrand(0, SimSize),
+        y: rrand(0, SimSize),
+        dna: rrand(0, 2**32),
+        gen: 1,
+        id: '0x'+(rrand(0, 2**32)>>>0).toString(16).toUpperCase(),
     }
 }
 
@@ -39,10 +38,10 @@ function populateGrid() {
 
     for (let i = 0; i < SimPopulation; i++) {
         let a = NewRandomAgent()
-        while (grid[a.X][a.Y] != null) {
+        while (grid[a.x][a.y] != null) {
             a = NewRandomAgent()
         }
-        grid[a.X][a.Y] = a;
+        grid[a.x][a.y] = a;
         population.push(a);
     }
 }
@@ -51,9 +50,9 @@ function readAgent(a) {
     return {
         _agent: a,
         Color: {
-            R: ((a.DNA1&GeneMaskColor&0xF00) >> 8) * 16,
-            G: ((a.DNA1&GeneMaskColor&0x0F0) >> 4) * 16,
-            B:  (a.DNA1&GeneMaskColor&0x00F) * 16,
+            R: ((a.dna&GeneMaskColor&0xF00) >> 8) * 16,
+            G: ((a.dna&GeneMaskColor&0x0F0) >> 4) * 16,
+            B:  (a.dna&GeneMaskColor&0x00F) * 16,
         },
     }
 }
@@ -86,7 +85,7 @@ function agentAction(a, o) {
     if (mA.distance === 0) {
         return {
             Action: ActionMate,
-            Mate: mA.observation._agent.ID,
+            Mate: mA.observation._agent.id,
         }
     }
 
@@ -97,7 +96,7 @@ function agentAction(a, o) {
 }
 
 function observe(a) {
-    let depth = (a.DNA1&GeneMaskSight) >> 12;
+    let depth = (a.dna&GeneMaskSight) >> 12;
     if (depth < 1) return [];
 
     let o = [];
@@ -107,27 +106,27 @@ function observe(a) {
         observation: readAgent(x),
     });
 
-    if (a.X+1 < SimSize) for (let i = a.X+1; i <= Math.min(a.X+depth, SimSize-1); i++) {
-        if (grid[i][a.Y] !== undefined) {
-            obs('right', i-a.X-1, grid[i][a.Y]);
+    if (a.x+1 < SimSize) for (let i = a.x+1; i <= Math.min(a.x+depth, SimSize-1); i++) {
+        if (grid[i][a.y] !== undefined) {
+            obs('right', i-a.x-1, grid[i][a.y]);
             break;
         }
     }
-    if (a.X-1 >= 0) for (let i = a.X-1; i >= Math.max(a.X-depth, 0); i--) {
-        if (grid[i][a.Y] !== undefined) {
-            obs('left', a.X-i-1, grid[i][a.Y]);
+    if (a.x-1 >= 0) for (let i = a.x-1; i >= Math.max(a.x-depth, 0); i--) {
+        if (grid[i][a.y] !== undefined) {
+            obs('left', a.x-i-1, grid[i][a.y]);
             break;
         }
     }
-    if (a.Y+1 < SimSize) for (let i = a.Y+1; i <= Math.min(a.Y+depth, SimSize-1); i++) {
-        if (grid[a.X][i] !== undefined) {
-            obs('down', i-a.Y-1, grid[a.X][i]);
+    if (a.y+1 < SimSize) for (let i = a.y+1; i <= Math.min(a.y+depth, SimSize-1); i++) {
+        if (grid[a.x][i] !== undefined) {
+            obs('down', i-a.y-1, grid[a.x][i]);
             break;
         }
     }
-    if (a.Y-1 >= 0) for (let i = a.Y-1; i >= Math.max(a.Y-depth, 0); i--) {
-        if (grid[a.X][i] !== undefined) {
-            obs('up', a.Y-i-1, grid[a.X][i]);
+    if (a.y-1 >= 0) for (let i = a.y-1; i >= Math.max(a.y-depth, 0); i--) {
+        if (grid[a.x][i] !== undefined) {
+            obs('up', a.y-i-1, grid[a.x][i]);
             break;
         }
     }
@@ -136,38 +135,38 @@ function observe(a) {
 }
 
 function agentMove(a, dir) {
-    let length = (a.DNA1&GeneMaskSpeed) >> 16;
+    let length = (a.dna&GeneMaskSpeed) >> 16;
 
-    grid[a.X][a.Y] = undefined;
+    grid[a.x][a.y] = undefined;
     switch (dir) {
         case 'left':
-            a.X = Math.max(a.X - length, 0);
-            while (grid[a.X][a.Y] != null) {
-                a.X += 1;
+            a.x = Math.max(a.x - length, 0);
+            while (grid[a.x][a.y] != null) {
+                a.x += 1;
             }
             break;
         case 'right':
-            a.X = Math.min(a.X + length, SimSize-1);
-            while (grid[a.X][a.Y] != null) {
-                a.X -= 1;
+            a.x = Math.min(a.x + length, SimSize-1);
+            while (grid[a.x][a.y] != null) {
+                a.x -= 1;
             }
             break;
         case 'up':
-            a.Y = Math.max(a.Y - length, 0);
-            while (grid[a.X][a.Y] != null) {
-                a.Y += 1;
+            a.y = Math.max(a.y - length, 0);
+            while (grid[a.x][a.y] != null) {
+                a.y += 1;
             }
             break;
         case 'down':
-            a.Y = Math.min(a.Y + length, SimSize-1);
-            while (grid[a.X][a.Y] != null) {
-                a.Y -= 1;
+            a.y = Math.min(a.y + length, SimSize-1);
+            while (grid[a.x][a.y] != null) {
+                a.y -= 1;
             }
             break;
         default:
             throw new Error("unknown direction: " + dir);
     }
-    grid[a.X][a.Y] = a;
+    grid[a.x][a.y] = a;
 }
 
 function performAction(agent, action) {
@@ -187,21 +186,19 @@ function performAction(agent, action) {
 
 let matingRequests = {};
 function requestMating(agent, mateID) {
-    if (matingRequests[mateID] === agent.ID) {
+    if (matingRequests[mateID] === agent.id) {
         matingRequests[mateID] = undefined;
-        mate(agent, population.find(a => a.ID === mateID));
+        mate(agent, population.find(a => a.id === mateID));
     }
 
-    matingRequests[agent.ID] = mateID;
+    matingRequests[agent.id] = mateID;
 }
 
 function mate(agent1, agent2, strategy) {
     const strategies = [
         {
-            maskA1: 0x55555555,
-            maskA2: 0x55555555,
-            maskB1: 0xAAAAAAAA,
-            maskB2: 0xAAAAAAAA,
+            mask1: 0x55555555,
+            mask2: 0xAAAAAAAA,
         }
     ];
 
@@ -210,21 +207,18 @@ function mate(agent1, agent2, strategy) {
     }
 
     let offspring = {
-        X: -1,
-        Y: -1,
-        DNA1: 0x0,
-        DNA2: 0x0,
-        Gen: Math.max(agent1.Gen, agent2.Gen) + 1,
-        ID: '0x'+(rrand(0, 2**32)>>>0).toString(16).toUpperCase(),
+        x: -1,
+        y: -1,
+        dna: 0x0,
+        gen: Math.max(agent1.gen, agent2.gen) + 1,
+        id: '0x'+(rrand(0, 2**32)>>>0).toString(16).toUpperCase(),
 
-        _parents: [agent1.ID, agent2.ID],
+        _parents: [agent1.id, agent2.id],
     };
 
     // Compose the offspring's DNA
-    offspring.DNA1 = agent1.DNA1 & strategies[strategy].maskA1;
-    offspring.DNA1 |= agent2.DNA1 & strategies[strategy].maskB1;
-    offspring.DNA2 = agent1.DNA2 & strategies[strategy].maskA2;
-    offspring.DNA2 |= agent2.DNA2 & strategies[strategy].maskB2;
+    offspring.dna = agent1.dna & strategies[strategy].mask1;
+    offspring.dna |= agent2.dna & strategies[strategy].mask2;
 
     // TODO: Apply random mutations
 
@@ -242,8 +236,8 @@ function mate(agent1, agent2, strategy) {
     let al = [];
 
     for (let i = 0; i < pl.length; i++) {
-        let x = agent1.X + pl[i].oX;
-        let y = agent1.Y + pl[i].oY;
+        let x = agent1.x + pl[i].oX;
+        let y = agent1.y + pl[i].oY;
 
         if (x < 0 || x >= SimSize || y < 0 || y >= SimSize) continue;
 
@@ -253,11 +247,11 @@ function mate(agent1, agent2, strategy) {
     if (!al.length) return null;
 
     const [x, y] = al[rrand(0, al.length-1)];
-    offspring.X = x;
-    offspring.Y = y;
+    offspring.x = x;
+    offspring.y = y;
 
     population.push(offspring);
-    grid[offspring.X][offspring.Y] = offspring;
+    grid[offspring.x][offspring.y] = offspring;
     return offspring;
 }
 
@@ -271,12 +265,12 @@ populateGrid()
 let sim_log = {
     size: SimSize,
     population: SimPopulation,
-    totalEpochs: SimEpochs,
-    startedAt: Date.now(),
+    total_epochs: SimEpochs,
+    started_at: Date.now(),
     epoch: [
         {
             time: 0,
-            state: JSON.parse(JSON.stringify(population)),
+            population: JSON.parse(JSON.stringify(population)),
             actions: {},
         },
     ],
@@ -295,16 +289,16 @@ for (let e = 1; e <= SimEpochs; e++) {
         let observation = observe(agent);
         let action = agentAction(agent, observation);
 
-        actions[agent.ID] = action;
+        actions[agent.id] = action;
 
         performAction(agent, action);
     }
 
     sim_log.epoch.push({
         time: Date.now() - _start,
-        state: JSON.parse(JSON.stringify(population)),
+        population: JSON.parse(JSON.stringify(population)),
         actions,
     });
 }
 
-fs.writeFileSync(`${sim_log.startedAt}.json`, JSON.stringify(sim_log));
+fs.writeFileSync(`${sim_log.started_at}.json`, JSON.stringify(sim_log));

@@ -174,14 +174,14 @@
   <script>
     const SvgRectSize = 5;
     const
-        GeneMaskColor = 0x00000FFF, // DNA1
-        GeneMaskSight = 0x0000F000, // DNA1
-        GeneMaskSpeed = 0x000F0000; // DNA1
+        GeneMaskColor = 0x00000FFF,
+        GeneMaskSight = 0x0000F000,
+        GeneMaskSpeed = 0x000F0000;
 
     function getAgentColor(a) {
-        let r = ((a.DNA1&GeneMaskColor&0xF00) >> 8) * 16;
-        let g = ((a.DNA1&GeneMaskColor&0x0F0) >> 4) * 16;
-        let b = (a.DNA1&GeneMaskColor&0x00F) * 16;
+        let r = ((a.dna&GeneMaskColor&0xF00) >> 8) * 16;
+        let g = ((a.dna&GeneMaskColor&0x0F0) >> 4) * 16;
+        let b = (a.dna&GeneMaskColor&0x00F) * 16;
 
         return `rgb(${r}, ${g}, ${b})`;
     }
@@ -203,15 +203,15 @@
 
       const xOffset = svgConf.borderBox.offsetX + svgConf.borderBox.borderWidth;
       const yOffset = svgConf.borderBox.offsetY + svgConf.borderBox.borderWidth;
-      for (let agent of data.epoch[e].state) {
+      for (let agent of data.epoch[e].population) {
         s += `<rect
-            x="${agent.X * SvgRectSize + xOffset}"
-            y="${agent.Y * SvgRectSize + yOffset}"
+            x="${agent.x * SvgRectSize + xOffset}"
+            y="${agent.y * SvgRectSize + yOffset}"
             width="${SvgRectSize}px"
             height="${SvgRectSize}px"
             stroke="none"
             fill="${getAgentColor(agent)}"
-            data-id="${agent.ID}" />`;
+            data-id="${agent.id}" />`;
       }
 
       renderCache[e] = s + '</svg>';
@@ -220,7 +220,7 @@
 
     function label(e) {
         const ts = data.epoch[e].time / 1000;
-        return `Epoch #${e} - Population: ${data.epoch[e].state.length} (${ts < 1 ? data.epoch[e].time+'ms' : ts.toFixed(3)+'s'})`;
+        return `Epoch #${e} - Population: ${data.epoch[e].population.length} (${ts < 1 ? data.epoch[e].time+'ms' : ts.toFixed(3)+'s'})`;
     }
 
     let data;
@@ -259,7 +259,7 @@
         resetFilters();
 
         let gen = document.getElementById('filter-gen');
-        gen.setAttribute('max', data.epoch[data.totalEpochs-1].state.sort((a, b) => b.Gen - a.Gen)[0].Gen);
+        gen.setAttribute('max', data.epoch[data.total_epochs-1].population.sort((a, b) => b.gen - a.gen)[0].gen);
     }
 
     function readFilters() {
@@ -291,7 +291,7 @@
     function filterAgents() {
         if (Object.keys(filters).length === 0) return;
 
-        data.epoch[currentEpoch].state.forEach((agent) => {
+        data.epoch[currentEpoch].population.forEach((agent) => {
             let selected = true;
             for (let f of Object.keys(filters)) {
                 if (agent[f] !== filters[f]) {
@@ -300,7 +300,7 @@
                 }
             }
 
-            document.querySelector(`#agents li[data-id="${agent.ID}"]`).classList.toggle('selected', selected);
+            document.querySelector(`#agents li[data-id="${agent.id}"]`).classList.toggle('selected', selected);
         });
 
         highlightAgents = [].map.call(document.querySelectorAll('#agents .selected'), el => el.getAttribute('data-id'));
@@ -311,11 +311,11 @@
         const aList = document.querySelector('#agents ol');
         aList.innerHTML = '';
 
-        for (let agent of data.epoch[e].state) {
+        for (let agent of data.epoch[e].population) {
             const li = document.createElement('li');
-            li.setAttribute('data-id', agent.ID);
-            li.innerText = agent.ID;
-            if (highlightAgents.indexOf(agent.ID) !== -1) {
+            li.setAttribute('data-id', agent.id);
+            li.innerText = agent.id;
+            if (highlightAgents.indexOf(agent.id) !== -1) {
                 li.classList.add('selected');
             }
             aList.append(li);
@@ -335,18 +335,18 @@
         }
 
         if (highlightAgents.length > 0) {
-            let agent = data.epoch[currentEpoch].state.find(a => a.ID === highlightAgents[highlightAgents.length-1]);
+            let agent = data.epoch[currentEpoch].population.find(a => a.id === highlightAgents[highlightAgents.length-1]);
 
             renderMetadata({
                 info: agent,
                 properties: {
                     Color: getAgentColor(agent),
-                    Sight: (agent.DNA1&GeneMaskSight) >> 12,
-                    Speed: (agent.DNA1&GeneMaskSpeed) >> 16,
+                    Sight: (agent.dna&GeneMaskSight) >> 12,
+                    Speed: (agent.dna&GeneMaskSpeed) >> 16,
                 },
-                prevAction: data.epoch[currentEpoch].actions[agent.ID] || null,
+                prevAction: data.epoch[currentEpoch].actions[agent.id] || null,
                 nextAction: currentEpoch+1 >= data.epoch.length ? null :
-                    data.epoch[currentEpoch+1].actions[agent.ID],
+                    data.epoch[currentEpoch+1].actions[agent.id],
             });
         }
     }
@@ -365,11 +365,9 @@
         }
 
         document.getElementById('meta').innerHTML = '<pre>'+JSON.stringify(data, null, 2)+'</pre>' +
-            (data.info && data.info.DNA1 && data.info.DNA2 ?
+            (data.info && data.info.dna ?
             '<div id="gene-rep">' +
-                // DNA2 is the most significant bits, so it has to come first
-                toAbsString(data.info.DNA2, 2).split('').map(b => `<span x-value="${b}"></span>`).join('') +
-                toAbsString(data.info.DNA1, 2).split('').map(b => `<span x-value="${b}"></span>`).join('') +
+                toAbsString(data.info.dna, 2).split('').map(b => `<span x-value="${b}"></span>`).join('') +
             '</div>' : '');
     }
 
@@ -384,13 +382,13 @@
         renderHighlightedAgents();
     }
     function nextEpoch() {
-        if (currentEpoch+1 <= data.totalEpochs) renderEpoch(currentEpoch+1);
+        if (currentEpoch+1 <= data.total_epochs) renderEpoch(currentEpoch+1);
     }
     function previousEpoch() {
         if (currentEpoch-1 >= 0) renderEpoch(currentEpoch-1);
     }
     function playNextEpoch() {
-        if (currentEpoch < data.totalEpochs) {
+        if (currentEpoch < data.total_epochs) {
             nextEpoch();
         } else if (playerLoop) {
             renderEpoch(0);
@@ -432,7 +430,7 @@
         renderEpoch(evt.target.value);
     });
     document.getElementById('next').addEventListener('click', () => {
-        if (currentEpoch < data.totalEpochs) {
+        if (currentEpoch < data.total_epochs) {
             nextEpoch();
         } else if (confirm("Last epoch. Restart playback?")) {
             renderEpoch(0);
@@ -443,7 +441,7 @@
         playing = !playing;
         if (playing) {
             this.innerText = 'Pause';
-            if (currentEpoch === data.totalEpochs) renderEpoch(0);
+            if (currentEpoch === data.total_epochs) renderEpoch(0);
             playerID = setInterval(playNextEpoch, 1000/playerSpeed);
         } else {
             this.innerText = 'Play';
@@ -487,7 +485,7 @@
         const canvas = document.createElement('canvas');
         container.append(canvas);
 
-        let dataset = data.epoch.map(epoch => epoch.state.length);
+        let dataset = data.epoch.map(epoch => epoch.population.length);
 
         new Chart(canvas, {
             type: 'line',
