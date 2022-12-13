@@ -493,6 +493,7 @@
                 datasets: [{
                     label: 'Population',
                     data: dataset,
+                    pointRadius: 0,
                 }],
                 labels: dataset.map((_, i) => i),
             },
@@ -524,34 +525,32 @@
         const canvas = document.createElement('canvas');
         container.append(canvas);
 
-        let counted = data.epoch[0].state.map(a => a.ID);
-        let accGens = [];
+        let counted = data.epoch[0].population.map(a => a.id);
         let dataset = [];
 
         data.epoch.forEach((epoch, e) => {
-            let agents = epoch.state
-                .filter(a => !counted.includes(a.ID));
+            if (e === 0) return;
 
-            counted = counted.concat(agents.map(a => a.ID));
-
-            let gens = agents.reduce(
+            let gens = epoch.population.reduce(
                 (gens, agent) => {
-                    gens[agent.Gen] = gens[agent.Gen] ? gens[agent.Gen]+1 : 1;
+                    if (counted.includes(agent.id)) return gens;
+
+                    gens[agent.gen] = gens[agent.gen] ? gens[agent.gen]+1 : 1;
+                    counted.push(agent.id);
+
                     return gens;
                 }, []
             );
 
-            gens = gens.map((pop, g) => {
-                let newBirths = pop - (accGens[g] || 0);
-                accGens[g] = (accGens[g] || 0) + newBirths;
-                return newBirths
-            }).filter(pop => pop > 0);
+            gens = gens.map((newBirths, gen) => {
+                if (!newBirths) return null;
 
-            gens = gens.map((newBirths, gen) => ({
-                x: e,
-                y: gen,
-                r: newBirths,
-            }));
+                return {
+                    x: e,
+                    y: gen,
+                    r: newBirths,
+                };
+            }).filter(p => p !== null);
 
             dataset = dataset.concat(gens);
         });
