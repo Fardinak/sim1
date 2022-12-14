@@ -243,7 +243,9 @@ func main() {
 		fmt.Printf("Epoch #%d started at %s\n", e, start)
 
 		// GC
-		for i, agent := range population {
+		for i := 0; i < len(population); i++ {
+			agent := population[i]
+
 			if agent.Energy == 0 {
 				grid[agent.X][agent.Y] = nil
 				population = append(population[:i], population[i+1:]...)
