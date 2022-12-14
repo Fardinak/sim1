@@ -10,7 +10,7 @@ import (
 
 const SimSize = 150
 const SimPopulation = 50
-const SimEpochs = 100
+const SimEpochs = 200
 
 type GridObservation struct {
 	Direction string
