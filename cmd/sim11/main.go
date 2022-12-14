@@ -180,6 +180,7 @@ func mate(agent1, agent2 *Agent) (offspring *Agent) {
 		}
 	}
 
+	// Discard if there is no space
 	if len(aPos) == 0 {
 		return nil
 	}
@@ -212,9 +213,9 @@ func performAction(a *Agent, i *AgentIntent) {
 }
 
 func findAgentByID(id string) *Agent {
-	for _, a := range population {
-		if a.ID == id {
-			return a
+	for _, agent := range population {
+		if agent.ID == id {
+			return agent
 		}
 	}
 
