@@ -155,6 +155,9 @@ func requestMating(a *Agent, mateID string) {
 func mate(agent1, agent2 *Agent) (offspring *Agent) {
 	offspring = NewOffspringAgent(agent1, agent2)
 
+	// Custody battle
+	guardian := ([2]*Agent{agent1, agent2})[rrand[int](0, 2)]
+
 	// Available Positions
 	aPos := make([][2]uint, 0, 8)
 
@@ -165,7 +168,7 @@ func mate(agent1, agent2 *Agent) (offspring *Agent) {
 				continue
 			}
 
-			x, y := int(agent1.X)+ox, int(agent1.Y)+oy
+			x, y := int(guardian.X)+ox, int(guardian.Y)+oy
 
 			if x < 0 || x >= SimSize || y < 0 || y >= SimSize {
 				continue
