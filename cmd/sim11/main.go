@@ -12,13 +12,6 @@ const SimSize = 150
 const SimPopulation = 50
 const SimEpochs = 100
 
-const (
-	GeneMaskColor = 0x00000FFF
-	GeneMaskSight = 0x0000F000
-	GeneMaskSpeed = 0x000F0000
-	GeneMaskBrain = 0xFFF00000
-)
-
 type GridObservation struct {
 	Direction string
 	Distance  uint
@@ -118,7 +111,7 @@ func observe(a *Agent) (o []*GridObservation) {
 }
 
 func agentMove(a *Agent, direction string) {
-	length := uint((a.DNA & GeneMaskSpeed) >> 16)
+	length := uint(a.DNA & GeneMaskSpeed >> 16)
 
 	grid[a.X][a.Y] = nil
 	switch direction {
@@ -146,6 +139,8 @@ func agentMove(a *Agent, direction string) {
 		panic("unknown direction: " + direction)
 	}
 	grid[a.X][a.Y] = a
+
+	a.IncurActionCost(ActionMove)
 }
 
 func requestMating(a *Agent, mateID string) {
@@ -194,6 +189,9 @@ func mate(agent1, agent2 *Agent) (offspring *Agent) {
 	population = append(population, offspring)
 	grid[offspring.X][offspring.Y] = offspring
 
+	agent1.IncurActionCost(ActionMate)
+	agent2.IncurActionCost(ActionMate)
+
 	return
 }
 
@@ -239,6 +237,17 @@ func main() {
 		matingRequests = make(map[string]string)
 
 		fmt.Printf("Epoch #%d started at %s\n", e, start)
+
+		// GC
+		for i, agent := range population {
+			if agent.Energy == 0 {
+				grid[agent.X][agent.Y] = nil
+				population = append(population[:i], population[i+1:]...)
+				continue
+			}
+		}
+
+		// Action Cycle
 		for _, agent := range population {
 			observation := observe(agent)
 			intent := agent.Action(observation)

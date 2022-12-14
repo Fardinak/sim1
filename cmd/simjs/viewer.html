@@ -174,9 +174,10 @@
   <script>
     const SvgRectSize = 5;
     const
-        GeneMaskColor = 0x00000FFF,
-        GeneMaskSight = 0x0000F000,
-        GeneMaskSpeed = 0x000F0000;
+        GeneMaskColor  = 0x00000FFF,
+        GeneMaskSight  = 0x0000F000,
+        GeneMaskSpeed  = 0x000F0000,
+        GeneMaskEnergy = 0x00F00000;
 
     function getAgentColor(a) {
         let r = ((a.dna&GeneMaskColor&0xF00) >> 8) * 16;
@@ -340,9 +341,10 @@
             renderMetadata({
                 info: agent,
                 properties: {
-                    Color: getAgentColor(agent),
-                    Sight: (agent.dna&GeneMaskSight) >> 12,
-                    Speed: (agent.dna&GeneMaskSpeed) >> 16,
+                    Color:  getAgentColor(agent),
+                    Sight:  (agent.dna&GeneMaskSight) >> 12,
+                    Speed:  (agent.dna&GeneMaskSpeed) >> 16,
+                    Energy: (agent.dna&GeneMaskEnergy) >> 20,
                 },
                 prevAction: data.epoch[currentEpoch].actions[agent.id] || null,
                 nextAction: currentEpoch+1 >= data.epoch.length ? null :
@@ -485,25 +487,53 @@
         const canvas = document.createElement('canvas');
         container.append(canvas);
 
-        let dataset = data.epoch.map(epoch => epoch.population.length);
+        let population = data.epoch.map(epoch => epoch.population.length);
+        let births = data.epoch.map((epoch, i) => i === 0 ? 0 :
+            epoch.population.filter(a => !data.epoch[i-1].population.some(b => b.id === a.id)).length);
+        let deaths = data.epoch.map((epoch, i) => i === 0 ? 0 :
+            data.epoch[i-1].population.filter(a => !epoch.population.some(b => b.id === a.id)).length);
 
         new Chart(canvas, {
             type: 'line',
             data: {
-                datasets: [{
-                    label: 'Population',
-                    data: dataset,
-                    pointRadius: 0,
-                }],
-                labels: dataset.map((_, i) => i),
+                datasets: [
+                    {
+                        label: 'Population',
+                        data: population,
+                        pointRadius: 0,
+                        yAxisID: 'y2',
+                    },
+                    {
+                        label: 'Births',
+                        data: births,
+                        pointRadius: 0,
+                        tension: .1,
+                    },
+                    {
+                        label: 'Deaths',
+                        data: deaths,
+                        pointRadius: 0,
+                        tension: .1,
+                    },
+                ],
+                labels: population.map((_, i) => i),
             },
             options: {
                 responsive: true,
                 scales: {
                     x: { title: { display: true, text: "Epoch" } },
-                    y: { title: { display: true, text: "Population" } },
+                    y: { title: { display: true, text: "Births & Deaths" } },
+                    y2: {
+                        title: { display: true, text: "Population" },
+                        position: 'right',
+                        type: 'logarithmic',
+                        grid: {
+                            drawOnChartArea: false, // only want the grid lines for one axis to show up
+                        },
+                    },
                 },
                 interaction: {
+                    mode: 'index',
                     intersect: false,
                 },
                 plugins: {
@@ -526,7 +556,7 @@
         container.append(canvas);
 
         let counted = data.epoch[0].population.map(a => a.id);
-        let dataset = [];
+        let births = [];
 
         data.epoch.forEach((epoch, e) => {
             if (e === 0) return;
@@ -552,15 +582,15 @@
                 };
             }).filter(p => p !== null);
 
-            dataset = dataset.concat(gens);
+            births = births.concat(gens);
         });
 
         new Chart(canvas, {
             type: 'bubble',
             data: {
                 datasets: [{
-                    label: 'New births',
-                    data: dataset,
+                    label: 'Births',
+                    data: births,
                 }],
             },
             options: {
