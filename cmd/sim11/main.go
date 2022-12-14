@@ -232,7 +232,7 @@ func main() {
 		"started_at":   time.Now().Unix(),
 	}
 	var epochLog = []EpochLog{
-		{0, population, map[string]*AgentIntent{}},
+		{0, cloneSlice(population), map[string]*AgentIntent{}},
 	}
 
 	for e := 1; e <= SimEpochs; e++ {
