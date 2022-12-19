@@ -260,7 +260,11 @@
         resetFilters();
 
         let gen = document.getElementById('filter-gen');
-        gen.setAttribute('max', data.epoch[data.total_epochs-1].population.sort((a, b) => b.gen - a.gen)[0].gen);
+        gen.setAttribute('max', data.epoch.reduce(
+            (max, epoch) => Math.max(max, epoch.population.reduce(
+                (max, agent) => Math.max(max, agent.gen),
+            0)),
+        0).toString());
     }
 
     function readFilters() {
