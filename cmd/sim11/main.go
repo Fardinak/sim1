@@ -107,6 +107,11 @@ func observe(a *Agent) (o []*GridObservation) {
 		}
 	}
 
+	// Randomize observations
+	rand.Shuffle(len(o), func(i, j int) {
+		o[i], o[j] = o[j], o[i]
+	})
+
 	return
 }
 
