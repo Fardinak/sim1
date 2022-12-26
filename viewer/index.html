@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<!--suppress HtmlFormInputWithoutLabel -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SIM1 VIEWER</title>
+
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <main>
+        <div id="container"></div>
+
+        <div style="flex-direction: column; display: flex; justify-content: space-between">
+            <div id="meta"></div>
+
+            <div id="reports">
+                <h4>Reports:</h4>
+                <button id="report-pop-growth">Population Growth</button>
+                <button id="report-gen-growth">Gen Growth</button>
+            </div>
+        </div>
+
+        <div style="flex-direction: column; display: flex">
+            <div id="controls">
+                <button id="prev">< Prev</button>
+                <input type="number" id="epoch" value="0" style="width: 4em">
+                <button id="next">Next ></button>
+                <br>
+                <button id="play">Play</button>
+                <select id="speed">
+                    <option value="1">x1</option>
+                    <option value="2">x2</option>
+                    <option value="4">x4</option>
+                    <option value="8">x8</option>
+                    <option value="10">x10</option>
+                    <option value="30">x30</option>
+                    <option value="60">x60</option>
+                    <option value="100">x100</option>
+                </select>
+                <br>
+                <label><input type="checkbox" id="loop" /> Loop</label>
+            </div>
+
+            <div id="agents">
+                <h4>Agents:</h4>
+                <form id="agents-filters" onsubmit="return false">
+                    <label for="filter-gen">Gen:</label>
+                    <input type="number" name="Gen" id="filter-gen" min="1" max="9999">
+                </form>
+                <ol></ol>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal"><main></main></div>
+
+    <script src="lib/chart.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>

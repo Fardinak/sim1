@@ -32,16 +32,12 @@ jobs:
         uses: actions/checkout@v3
       - name: Setup Pages
         uses: actions/configure-pages@v2
-      - name: Make dist dir
-        run: mkdir dist
-      - name: Add files
-        run: |
-          cp cmd/simjs/viewer.html dist/index.html
-          sed -i -e 's/lib\/chart\.js/https\:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/Chart\.js\/4\.0\.1\/chart\.umd\.min\.js/' dist/index.html
-      - name: Upload artifact
+      - name: Switch to CDN
+        run: sed -i -e 's/lib\/chart\.js/https\:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/Chart\.js\/4\.0\.1\/chart\.umd\.min\.js/' viewer/index.html
+      - name: Upload artifacts
         uses: actions/upload-pages-artifact@v1
         with:
-          path: 'dist'
+          path: 'viewer'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
