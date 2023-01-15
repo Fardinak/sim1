@@ -440,3 +440,42 @@ document.getElementById('report-gen-growth').addEventListener('click', () => {
 
     modal.classList.add('show');
 });
+document.getElementById('report-feedings').addEventListener('click', () => {
+    const modal = document.getElementById('modal');
+    const container = modal.querySelector('main');
+    container.innerHTML = '';
+
+    const canvas = document.createElement('canvas');
+    container.append(canvas);
+
+    let feedings = data.epoch.map(epoch => Object.keys(epoch.actions).filter(id => epoch.actions[id].action === "eat").length);
+
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'Feedings',
+                    data: feedings,
+                    pointRadius: 0,
+                },
+            ],
+            labels: feedings.map((_, i) => i),
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: "Feedings",
+                },
+            },
+        },
+    });
+
+    modal.classList.add('show');
+});
