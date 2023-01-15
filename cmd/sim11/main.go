@@ -305,6 +305,10 @@ func main() {
 			}
 		}
 
+		if len(population) == 0 {
+			break
+		}
+
 		// Action Cycle
 		for _, agent := range population {
 			observation := observe(agent)
