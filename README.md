@@ -19,4 +19,4 @@ It is an effort to make way for Synthetic Intelligence to be born within a simpl
 ```shell
 $ go run ./cmd/sim11
 ```
-`sim11` runs a complete simulation (currently with predefined constants defined in [main.go:L11-13](cmd/sim11/main.go#L11-L13)) and dumps the logs to a json file that can then be replayed and investigated using the [viewer](https://fardinak.github.io/sim1).
+`sim11` runs a complete simulation (currently with predefined constants defined in [main.go:L11-14](cmd/sim11/main.go#L11-L14)) and dumps the logs to a json file that can then be replayed and investigated using the [viewer](https://fardinak.github.io/sim1).

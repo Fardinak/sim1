@@ -85,16 +85,30 @@ func (a *Agent) Observe() *AgentObservation {
 }
 
 func (a *Agent) Action(o []*GridObservation) *AgentIntent {
+	var ownColor = a.Observe().Color
 	var max float64
 	var observation *GridObservation
 	var fitness float64
+	var priority = ([]string{"mate", "eat"})[rrand[int](0, 2)]
 
-	ownColor := a.Observe().Color
 	for _, obs := range o {
-		fitness = colorCloseness(ownColor, obs.Agent.Color)
-		if fitness > max {
-			max = fitness
+		switch obs.ContentType {
+		case "agent":
+			if priority != "mate" && observation != nil {
+				continue
+			}
+			fitness = colorCloseness(ownColor, obs.Agent.Color)
+			if fitness > max {
+				max = fitness
+				observation = obs
+			}
+		case "food":
+			if priority != "eat" && observation != nil {
+				continue
+			}
 			observation = obs
+		default:
+			panic("unknown grid cell contents: " + obs.ContentType)
 		}
 	}
 
@@ -106,9 +120,16 @@ func (a *Agent) Action(o []*GridObservation) *AgentIntent {
 	}
 
 	if observation.Distance == 0 {
-		return &AgentIntent{
-			Action: ActionMate,
-			MateID: observation.Agent.ID,
+		if observation.ContentType == "agent" {
+			return &AgentIntent{
+				Action: ActionMate,
+				MateID: observation.Agent.ID,
+			}
+		} else if observation.ContentType == "food" {
+			return &AgentIntent{
+				Action:    ActionEat,
+				Direction: observation.Direction,
+			}
 		}
 	}
 
@@ -116,6 +137,10 @@ func (a *Agent) Action(o []*GridObservation) *AgentIntent {
 		Action:    ActionMove,
 		Direction: observation.Direction,
 	}
+}
+
+func (a *Agent) Eat(addedEnergy uint) {
+	a.Energy += addedEnergy
 }
 
 func (a *Agent) IncurActionCost(action string) (died bool) {

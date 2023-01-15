@@ -9,14 +9,9 @@ import (
 )
 
 const SimSize = 150
-const SimPopulation = 50
 const SimEpochs = 200
-
-type GridObservation struct {
-	Direction string
-	Distance  uint
-	Agent     *AgentObservation
-}
+const SimPopulation = 200
+const SimFoodUnits = 800
 
 type EpochLog struct {
 	Time       int64                   `json:"time"`
@@ -25,7 +20,7 @@ type EpochLog struct {
 }
 
 var population []*Agent
-var grid [SimSize][SimSize]*Agent
+var grid [SimSize][SimSize]*GridContent
 var matingRequests map[string]string
 
 func init() {
@@ -43,27 +38,42 @@ func populateGrid() {
 		}
 
 		population[i] = a
-		grid[a.X][a.Y] = a
+		grid[a.X][a.Y] = NewAgentCell(a)
+	}
+
+	for i := 0; i < SimFoodUnits; i++ {
+		x, y := rrand[uint](0, SimSize), rrand[uint](0, SimSize)
+		for grid[x][y] != nil {
+			x, y = rrand[uint](0, SimSize), rrand[uint](0, SimSize)
+		}
+
+		grid[x][y] = NewFoodCell()
 	}
 }
 
-func observe(a *Agent) (o []*GridObservation) {
+func observe(a *Agent) (obs []*GridObservation) {
 	sight := uint(a.DNA & GeneMaskSight >> 12)
 	if sight < 1 {
 		return
 	}
 
-	o = make([]*GridObservation, 0, 9)
+	obs = make([]*GridObservation, 0, 9)
 
 	// Look East
 	for i := uint(1); i <= min(sight, SimSize-1-a.X); i++ {
 		cell := grid[a.X+i][a.Y]
 		if cell != nil {
-			o = append(o, &GridObservation{
-				Direction: "right",
-				Distance:  i - 1,
-				Agent:     cell.Observe(),
-			})
+			o := &GridObservation{
+				Direction:   "right",
+				Distance:    i - 1,
+				ContentType: cell.ContentType,
+			}
+
+			if cell.ContentType == GridContentAgent {
+				o.Agent = cell.Agent.Observe()
+			}
+
+			obs = append(obs, o)
 			break
 		}
 	}
@@ -72,11 +82,17 @@ func observe(a *Agent) (o []*GridObservation) {
 	for i := uint(1); i <= min(sight, a.X); i++ {
 		cell := grid[a.X-i][a.Y]
 		if cell != nil {
-			o = append(o, &GridObservation{
-				Direction: "left",
-				Distance:  i - 1,
-				Agent:     cell.Observe(),
-			})
+			o := &GridObservation{
+				Direction:   "left",
+				Distance:    i - 1,
+				ContentType: cell.ContentType,
+			}
+
+			if cell.ContentType == GridContentAgent {
+				o.Agent = cell.Agent.Observe()
+			}
+
+			obs = append(obs, o)
 			break
 		}
 	}
@@ -85,11 +101,17 @@ func observe(a *Agent) (o []*GridObservation) {
 	for i := uint(1); i <= min(sight, SimSize-1-a.Y); i++ {
 		cell := grid[a.X][a.Y+i]
 		if cell != nil {
-			o = append(o, &GridObservation{
-				Direction: "down",
-				Distance:  i - 1,
-				Agent:     cell.Observe(),
-			})
+			o := &GridObservation{
+				Direction:   "down",
+				Distance:    i - 1,
+				ContentType: cell.ContentType,
+			}
+
+			if cell.ContentType == GridContentAgent {
+				o.Agent = cell.Agent.Observe()
+			}
+
+			obs = append(obs, o)
 			break
 		}
 	}
@@ -98,18 +120,24 @@ func observe(a *Agent) (o []*GridObservation) {
 	for i := uint(1); i <= min(sight, a.Y); i++ {
 		cell := grid[a.X][a.Y-i]
 		if cell != nil {
-			o = append(o, &GridObservation{
-				Direction: "up",
-				Distance:  i - 1,
-				Agent:     cell.Observe(),
-			})
+			o := &GridObservation{
+				Direction:   "up",
+				Distance:    i - 1,
+				ContentType: cell.ContentType,
+			}
+
+			if cell.ContentType == GridContentAgent {
+				o.Agent = cell.Agent.Observe()
+			}
+
+			obs = append(obs, o)
 			break
 		}
 	}
 
 	// Randomize observations
-	rand.Shuffle(len(o), func(i, j int) {
-		o[i], o[j] = o[j], o[i]
+	rand.Shuffle(len(obs), func(i, j int) {
+		obs[i], obs[j] = obs[j], obs[i]
 	})
 
 	return
@@ -143,9 +171,26 @@ func agentMove(a *Agent, direction string) {
 	default:
 		panic("unknown direction: " + direction)
 	}
-	grid[a.X][a.Y] = a
+	grid[a.X][a.Y] = NewAgentCell(a)
 
 	a.IncurActionCost(ActionMove)
+}
+
+func agentEat(a *Agent, direction string) {
+	x, y := a.X, a.Y
+	switch direction {
+	case "left":
+		x--
+	case "right":
+		x++
+	case "up":
+		y--
+	case "down":
+		y++
+	}
+
+	a.Eat(2)
+	grid[x][y] = nil
 }
 
 func requestMating(a *Agent, mateID string) {
@@ -196,7 +241,7 @@ func mate(agent1, agent2 *Agent) (offspring *Agent) {
 	offspring.Y = pos[1]
 
 	population = append(population, offspring)
-	grid[offspring.X][offspring.Y] = offspring
+	grid[offspring.X][offspring.Y] = NewAgentCell(offspring)
 
 	agent1.IncurActionCost(ActionMate)
 	agent2.IncurActionCost(ActionMate)
@@ -209,7 +254,7 @@ func performAction(a *Agent, i *AgentIntent) {
 	case ActionMove:
 		agentMove(a, i.Direction)
 	case ActionEat:
-		panic("not implemented")
+		agentEat(a, i.Direction)
 	case ActionMate:
 		requestMating(a, i.MateID)
 	default:
