@@ -306,6 +306,7 @@ func main() {
 		}
 
 		if len(population) == 0 {
+			simLog["total_epochs"] = e
 			break
 		}
 
