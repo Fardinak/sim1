@@ -215,6 +215,8 @@ func performAction(a *Agent, i *AgentIntent) {
 	default:
 		panic("unknown action: " + i.Action)
 	}
+
+	a.IncurBaseEnergyCost()
 }
 
 func findAgentByID(id string) *Agent {

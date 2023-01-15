@@ -21,8 +21,9 @@ const (
 )
 
 const (
+	EnergyCostBase = 1
 	EnergyCostMove = 1
-	EnergyCostMate = 2
+	EnergyCostMate = 3
 )
 
 type Agent struct {
@@ -136,6 +137,16 @@ func (a *Agent) IncurActionCost(action string) (died bool) {
 	}
 
 	a.Energy -= cost
+	return false
+}
+
+func (a *Agent) IncurBaseEnergyCost() (died bool) {
+	if EnergyCostBase >= a.Energy {
+		a.Energy = 0
+		return true
+	}
+
+	a.Energy -= EnergyCostBase
 	return false
 }
 
