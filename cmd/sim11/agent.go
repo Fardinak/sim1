@@ -7,11 +7,10 @@ import (
 )
 
 const (
-	GeneMaskColor  = 0x00000FFF
-	GeneMaskSight  = 0x0000F000
-	GeneMaskSpeed  = 0x000F0000
-	GeneMaskEnergy = 0x00F00000
-	GeneMaskBrain  = 0xFF000000
+	GeneMaskSight  = 0x0000000F
+	GeneMaskSpeed  = 0x000000F0
+	GeneMaskEnergy = 0x00000F00
+	GeneMaskBrain  = 0xFFFF0000
 )
 
 const (
@@ -53,7 +52,7 @@ func NewRandomAgent() *Agent {
 	return &Agent{
 		ID:     fmt.Sprintf("0x%08X", rrand[uint32](0, 0xFFFFFFFF)),
 		DNA:    dna,
-		Energy: uint(dna & GeneMaskEnergy >> 20),
+		Energy: uint(dna & GeneMaskEnergy >> 8),
 		X:      rrand[uint](0, SimSize),
 		Y:      rrand[uint](0, SimSize),
 		Gen:    1,
@@ -66,7 +65,7 @@ func NewOffspringAgent(agent1, agent2 *Agent) *Agent {
 	return &Agent{
 		ID:      fmt.Sprintf("0x%08X", rrand[uint32](0, 0xFFFFFFFF)),
 		DNA:     dna,
-		Energy:  uint(dna & GeneMaskEnergy >> 20),
+		Energy:  uint(dna & GeneMaskEnergy >> 8),
 		Gen:     max(agent1.Gen, agent2.Gen) + 1,
 		Parents: [2]string{agent1.ID, agent2.ID},
 	}
@@ -76,9 +75,9 @@ func (a *Agent) Observe() *AgentObservation {
 	return &AgentObservation{
 		ID: a.ID,
 		Color: color.RGBA{
-			R: uint8(a.DNA&GeneMaskColor&0xF00>>8) * 16,
-			G: uint8(a.DNA&GeneMaskColor&0x0F0>>4) * 16,
-			B: uint8(a.DNA&GeneMaskColor&0x00F) * 16,
+			R: uint8((a.DNA & 0xFFFF0000 >> 16) / 256),
+			G: uint8(a.DNA & 0x000000FF),
+			B: uint8(a.DNA&0x00000F00>>8) * 16,
 			A: 255,
 		},
 	}

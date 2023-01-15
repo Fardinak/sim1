@@ -52,7 +52,7 @@ func populateGrid() {
 }
 
 func observe(a *Agent) (obs []*GridObservation) {
-	sight := uint(a.DNA & GeneMaskSight >> 12)
+	sight := uint(a.DNA & GeneMaskSight)
 	if sight < 1 {
 		return
 	}
@@ -144,7 +144,7 @@ func observe(a *Agent) (obs []*GridObservation) {
 }
 
 func agentMove(a *Agent, direction string) {
-	length := uint(a.DNA & GeneMaskSpeed >> 16)
+	length := uint(a.DNA & GeneMaskSpeed >> 4)
 
 	grid[a.X][a.Y] = nil
 	switch direction {

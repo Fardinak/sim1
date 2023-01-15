@@ -1,14 +1,14 @@
 const SvgRectSize = 5;
 const
-    GeneMaskColor  = 0x00000FFF,
-    GeneMaskSight  = 0x0000F000,
-    GeneMaskSpeed  = 0x000F0000,
-    GeneMaskEnergy = 0x00F00000;
+    GeneMaskSight  = 0x0000000F,
+    GeneMaskSpeed  = 0x000000F0,
+    GeneMaskEnergy = 0x00000F00,
+    GeneMaskBrain  = 0xFFFF0000;
 
 function getAgentColor(a) {
-    let r = ((a.dna&GeneMaskColor&0xF00) >> 8) * 16;
-    let g = ((a.dna&GeneMaskColor&0x0F0) >> 4) * 16;
-    let b = (a.dna&GeneMaskColor&0x00F) * 16;
+    let r = ((a.dna&0xFFFF0000) >> 16) / 256;
+    let g =   a.dna&0x000000FF;
+    let b = ((a.dna&0x00000F00) >> 8) * 16;
 
     return `rgb(${r}, ${g}, ${b})`;
 }
