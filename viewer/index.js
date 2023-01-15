@@ -50,9 +50,11 @@ function label(e) {
     return `Epoch #${e} - Population: ${data.epoch[e].population.length} (${ts < 1 ? data.epoch[e].time+'ms' : ts.toFixed(3)+'s'})`;
 }
 
+let loadingProgress;
 let data;
 let svgConf;
 let renderCache = [];
+let chartCache = {};
 let highlightAgents = [];
 let filters = {};
 let currentEpoch = 0;
@@ -64,6 +66,7 @@ let playerID; // IntervalID
 function loadJSON(_data) {
     data = _data;
     renderCache = [];
+    chartCache = {};
     svgConf = {
         canvas: {
             width:  data.size*SvgRectSize + SvgRectSize*4,
@@ -78,8 +81,128 @@ function loadJSON(_data) {
         },
     };
 
+    loadingProgress.update(10, "Configuring filters");
     configureFilters();
+
+    loadingProgress.update(15, "Warming up the render cache");
+    for (let i = 0; i < data.total_epochs; i++) {
+        svg(i);
+        if (i % 30 === 0) {
+            loadingProgress.update(15 + data.total_epochs/30);
+        }
+    }
+
+    loadingProgress.update(45, "Rendering genesis epoch");
     renderEpoch(0);
+
+    loadingProgress.update(50, "Generating report: Population Growth");
+    populationGrowthReport();
+
+    loadingProgress.update(65, "Generating report: Generational Growth");
+    populationGrowthReport();
+
+    loadingProgress.update(90, "Generating report: Feedings");
+    populationGrowthReport();
+
+    loadingProgress.update(100, "Done");
+    setTimeout(loadingProgress.done, 2500);
+}
+
+function showLoadingModal() {
+    const modal = document.getElementById('modal');
+    const container = modal.querySelector('main');
+    container.innerHTML = '<h4 class="title">Loading simulation</h4>' +
+        '<div class="progress-bar"><div class="bar"></div></div>' +
+        '<div class="subtext"></div>';
+
+    const pb = container.querySelector('.progress-bar .bar');
+    const update = (percent, subtext) => {
+        if (percent < 0 || percent > 100) throw new RangeError('percent must be between 0 and 100');
+
+        pb.style.width = `${percent}%`;
+
+        if (subtext) {
+            container.querySelector('.subtext').innerText = subtext;
+        }
+    };
+
+    const done = () => {
+        modal.classList.remove('show', 'progress');
+    };
+
+    modal.classList.add('show', 'progress');
+
+    return { update, done };
+}
+
+function populationGrowthReport() {
+    let population = chartCache['pgr-population'];
+    if (!population) {
+        population = data.epoch.map(epoch => epoch.population.length);
+        chartCache['pgr-population'] = population;
+    }
+
+    let births = chartCache['pgr-births'];
+    if (!births) {
+        births = data.epoch.map((epoch, i) => i === 0 ? 0 :
+            epoch.population.filter(a => !data.epoch[i-1].population.some(b => b.id === a.id)).length);
+        chartCache['pgr-births'] = births;
+    }
+
+    let deaths = chartCache['pgr-deaths'];
+    if (!deaths) {
+        deaths = data.epoch.map((epoch, i) => i === 0 ? 0 :
+            data.epoch[i-1].population.filter(a => !epoch.population.some(b => b.id === a.id)).length);
+        chartCache['pgr-deaths'] = deaths;
+    }
+
+    return { population, births, deaths };
+}
+
+function generationalGrowthReport() {
+    if (chartCache['ggr-births']) return { births: chartCache['ggr-births'] };
+
+    let counted = data.epoch[0].population.map(a => a.id);
+    let births = [];
+
+    data.epoch.forEach((epoch, e) => {
+        if (e === 0) return;
+
+        let gens = epoch.population.reduce(
+            (gens, agent) => {
+                if (counted.includes(agent.id)) return gens;
+
+                gens[agent.gen] = gens[agent.gen] ? gens[agent.gen]+1 : 1;
+                counted.push(agent.id);
+
+                return gens;
+            }, []
+        );
+
+        gens = gens.map((newBirths, gen) => {
+            if (!newBirths) return null;
+
+            return {
+                x: e,
+                y: gen,
+                r: newBirths,
+            };
+        }).filter(p => p !== null);
+
+        births = births.concat(gens);
+    });
+
+    chartCache['ggr-births'] = births;
+    return { births };
+}
+
+function feedingsReport() {
+    if (chartCache['fr-feedings']) return { feedings: chartCache['fr-feedings'] };
+
+    let feedings = data.epoch.map(epoch => Object.keys(epoch.actions).filter(id => epoch.actions[id].action === "eat").length);
+
+    chartCache['fr-feedings'] = feedings;
+    return { feedings };
 }
 
 function configureFilters() {
@@ -247,12 +370,17 @@ document.querySelector('body').addEventListener('drop', (evt) => {
     evt.stopPropagation();
     document.body.classList.remove('dragging');
 
+    loadingProgress = showLoadingModal();
+
     if (evt.dataTransfer.files.length < 1 || evt.dataTransfer.files[0].type !== 'application/json') {
         return alert('unsupported file');
     }
 
+    loadingProgress.update(0, "Reading sim file");
+
     const reader = new FileReader();
     reader.addEventListener('load', () => {
+        loadingProgress.update(5, "Parsing sim file");
         loadJSON(JSON.parse(reader.result));
     });
     reader.readAsText(evt.dataTransfer.files[0]);
@@ -317,11 +445,7 @@ document.getElementById('report-pop-growth').addEventListener('click', () => {
     const canvas = document.createElement('canvas');
     container.append(canvas);
 
-    let population = data.epoch.map(epoch => epoch.population.length);
-    let births = data.epoch.map((epoch, i) => i === 0 ? 0 :
-        epoch.population.filter(a => !data.epoch[i-1].population.some(b => b.id === a.id)).length);
-    let deaths = data.epoch.map((epoch, i) => i === 0 ? 0 :
-        data.epoch[i-1].population.filter(a => !epoch.population.some(b => b.id === a.id)).length);
+    const { population, births, deaths } = populationGrowthReport();
 
     new Chart(canvas, {
         type: 'line',
@@ -385,35 +509,7 @@ document.getElementById('report-gen-growth').addEventListener('click', () => {
     const canvas = document.createElement('canvas');
     container.append(canvas);
 
-    let counted = data.epoch[0].population.map(a => a.id);
-    let births = [];
-
-    data.epoch.forEach((epoch, e) => {
-        if (e === 0) return;
-
-        let gens = epoch.population.reduce(
-            (gens, agent) => {
-                if (counted.includes(agent.id)) return gens;
-
-                gens[agent.gen] = gens[agent.gen] ? gens[agent.gen]+1 : 1;
-                counted.push(agent.id);
-
-                return gens;
-            }, []
-        );
-
-        gens = gens.map((newBirths, gen) => {
-            if (!newBirths) return null;
-
-            return {
-                x: e,
-                y: gen,
-                r: newBirths,
-            };
-        }).filter(p => p !== null);
-
-        births = births.concat(gens);
-    });
+    const { births } = generationalGrowthReport();
 
     new Chart(canvas, {
         type: 'bubble',
@@ -435,6 +531,9 @@ document.getElementById('report-gen-growth').addEventListener('click', () => {
                     text: "Generational Growth",
                 },
             },
+            animation: {
+                duration: 0,
+            },
         },
     });
 
@@ -448,7 +547,7 @@ document.getElementById('report-feedings').addEventListener('click', () => {
     const canvas = document.createElement('canvas');
     container.append(canvas);
 
-    let feedings = data.epoch.map(epoch => Object.keys(epoch.actions).filter(id => epoch.actions[id].action === "eat").length);
+    const { feedings } = feedingsReport();
 
     new Chart(canvas, {
         type: 'line',
