@@ -117,6 +117,9 @@ main {
     height: auto;
     display: block;
 }
+#modal.progress::after {
+    content: '';
+}
 
 #modal .title {
     text-align: center;

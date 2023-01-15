@@ -435,7 +435,7 @@ document.getElementById('container').addEventListener('click', (evt) => {
 document.getElementById('agents-filters').addEventListener('change', readFilters);
 
 document.getElementById('modal').addEventListener('click', (evt) => {
-    if (evt.target.matches('#modal')) evt.target.classList.remove('show');
+    if (evt.target.matches('#modal:not(.progress)')) evt.target.classList.remove('show');
 });
 document.getElementById('report-pop-growth').addEventListener('click', () => {
     const modal = document.getElementById('modal');
