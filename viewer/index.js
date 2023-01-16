@@ -295,9 +295,9 @@ function renderHighlightedAgents() {
             info: agent,
             properties: {
                 Color:  getAgentColor(agent),
-                Sight:  (agent.dna&GeneMaskSight) >> 12,
-                Speed:  (agent.dna&GeneMaskSpeed) >> 16,
-                Energy: (agent.dna&GeneMaskEnergy) >> 20,
+                Sight:  (agent.dna&GeneMaskSight),
+                Speed:  (agent.dna&GeneMaskSpeed) >> 4,
+                Energy: (agent.dna&GeneMaskEnergy) >> 8,
             },
             prevAction: data.epoch[currentEpoch].actions[agent.id] || null,
             nextAction: currentEpoch+1 >= data.epoch.length ? null :
